@@ -1,3 +1,5 @@
+import importlib
+
 from docutils import nodes
 from docutils.parsers.rst.directives import flag
 from sphinx.util.docutils import SphinxDirective
@@ -6,34 +8,53 @@ from sphinx.util.docutils import SphinxDirective
 class TermynalDirective(SphinxDirective):
     # Define the options (keyword arguments) this directive will accept
     option_spec = {"input": str, "progress": flag, "output": str}
-    instance_count = 0
 
     def run(self):  # type: ignore
-        TermynalDirective.instance_count += 1
-        unique_id = f"example2termynal{TermynalDirective.instance_count}"
         input_ = self.options.get("input", "")
         progress = "progress" in self.options
         output = self.options.get("output", "")
 
-        print(progress)
-
         # Build the Termynal HTML content
-        content = f'<div id="{unique_id}" data-ty-lineDelay="300"  data-termynal>\n'
+        content = '<div class="termy" data-ty-lineDelay="300"  data-termynal>\n'
         content += f'  <span data-ty="input">{input_}</span>\n'
         if progress:
             content += '  <span data-ty="progress"></span>\n'
         content += f"  <span data-ty>{output}</span>\n"
         content += "</div>\n"
         raw_html_node = nodes.raw("", content, format="html")
-        # Add the script tag with the unique ID for initialization
-        script_node = nodes.raw(
-            "",
-            f'<script src="_static/termynal.js" data-termynal-container="#{unique_id}"></script>',
-            format="html",
-        )
+        return [raw_html_node]
 
-        return [raw_html_node, script_node]
+
+class Example2TermynalDirective(SphinxDirective):
+    required_arguments = 2
+
+    def run(self):
+        base_command = self.arguments[0]
+        parameters_module = self.arguments[1]
+
+        # Import the parameters from the specified module
+        module = importlib.import_module(parameters_module)
+        parameters = getattr(module, "parameters")
+
+        # Build the Termynal HTML content
+        termynal_content = (
+            '<div class="termy" data-ty-lineDelay="300"  data-termynal>\n'
+        )
+        for input_data, output_data in parameters:
+            input_str = " ".join(input_data)
+            termynal_content += (
+                f'  <span data-ty="input"> python {base_command} {input_str}</span>\n'
+            )
+            termynal_content += f"  <span data-ty>{output_data}</span>\n"
+        termynal_content += "</div>\n"
+
+        raw_html_node = nodes.raw("", termynal_content, format="html")
+
+        return [raw_html_node]
 
 
 def setup(app):  # type: ignore
+    app.add_directive("example2termynal", Example2TermynalDirective)  # type: ignore
     app.add_directive("termynal", TermynalDirective)  # type: ignore
+    app.add_css_file("termynal.css")  # type: ignore
+    app.add_js_file("termynal.js", loading_method="defer")  # type: ignore

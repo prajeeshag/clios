@@ -1,8 +1,8 @@
-import sys
-
+# [start]
 from clios import Clios
 
 app = Clios()
+# [app_created]
 
 
 @app.reader()
@@ -12,11 +12,6 @@ def reader_int(input: str) -> int:
 
 @app.writer()
 def writer_int(input: int):
-    print(input)
-
-
-@app.writer()
-def writer_float(input: float):
     print(input)
 
 
@@ -35,5 +30,9 @@ def sum_int(input: tuple[int, ...]) -> int:
     return sum(input)
 
 
+# [main_start]
 if __name__ == "__main__":
+    import sys
+
     app.parse_args(sys.argv[1:]).execute()
+# [main_end]
