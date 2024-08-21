@@ -6,7 +6,11 @@ on:
 
 jobs:
   publish:
+    name: Upload release to PyPI
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      
     steps:
       - uses: actions/checkout@v4
 
@@ -16,13 +20,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install build twine
+        run: pip install build
 
       - name: Build the package
         run: python -m build
 
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        run: twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
