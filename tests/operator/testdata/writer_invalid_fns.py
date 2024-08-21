@@ -3,8 +3,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any
 
-from clio.exceptions import InvalidFunction
-
+from clios.exceptions import InvalidFunction
 from tests.operator.testdata.utils import list_functions
 
 from .utils import e_args

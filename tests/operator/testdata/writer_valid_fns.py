@@ -1,6 +1,6 @@
 # type: ignore
 
-from clio.operator import Writer as W
+from clios.operator import Writer as W
 
 passing = []
 

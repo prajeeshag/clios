@@ -26,7 +26,7 @@ def test_operator(mocker, app: clios.Clios):
 
 def test_operator_with_name(mocker, app: clios.Clios):
     operator_factory_mock = mocker.patch(
-        "clios._Clio.operator_factory", return_value="Operator object"
+        "clios._Clios.operator_factory", return_value="Operator object"
     )
     mock_operator_registry = mocker.patch.object(app, "_operators", autospec=True)
 
@@ -40,7 +40,7 @@ def test_operator_with_name(mocker, app: clios.Clios):
 
 def test_writer(mocker, app: clios.Clios):
     wrtr = Writer(None, int, 1)
-    factory_mock = mocker.patch("clios._Clio.writer_factory", return_value=wrtr)
+    factory_mock = mocker.patch("clios._Clios.writer_factory", return_value=wrtr)
     mock_registry = mocker.patch.object(app, "_writers", autospec=True)
 
     @app.writer()
@@ -53,7 +53,7 @@ def test_writer(mocker, app: clios.Clios):
 
 def test_reader(mocker, app: clios.Clios):
     rdr = Reader(None, int)
-    factory_mock = mocker.patch("clios._Clio.reader_factory", return_value=rdr)
+    factory_mock = mocker.patch("clios._Clios.reader_factory", return_value=rdr)
     mock_registry = mocker.patch.object(app, "_readers", autospec=True)
 
     @app.reader()
@@ -66,7 +66,7 @@ def test_reader(mocker, app: clios.Clios):
 
 def test_parse_args(mocker, app):
     # Mock the Parser class
-    mock_parser_class = mocker.patch("clios._Clio.Parser", autospec=True)
+    mock_parser_class = mocker.patch("clios._Clios.Parser", autospec=True)
 
     # Create a mock Parser instance
     mock_parser_instance = mock_parser_class.return_value

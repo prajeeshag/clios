@@ -2,8 +2,9 @@
 from typing import Any
 
 import pytest
-from clio.exceptions import InvalidFunction
-from clio.operator import operator_factory
+
+from clios.exceptions import InvalidFunction
+from clios.operator import operator_factory
 
 from .testdata.operator_invalid_fns import failing
 from .testdata.operator_valid_fns import passing

@@ -2,7 +2,8 @@
 from dataclasses import dataclass
 
 import pytest
-from clio.operator import BaseOperator
+
+from clios.operator import BaseOperator
 
 
 @dataclass

@@ -1,12 +1,12 @@
 # type: ignore
 from typing import Annotated, Callable
 
-from clio.operator import Generator as Ge
-from clio.operator import Operator as Op
-from clio.operator import Reader
-from clio.operator._Operator import _BASE_DATA_READERS as dR
-from clio.operator._Operator import _Input as I
-from clio.operator._Operator import _Param as P
+from clios.operator import Generator as Ge
+from clios.operator import Operator as Op
+from clios.operator import Reader
+from clios.operator._Operator import _BASE_DATA_READERS as dR
+from clios.operator._Operator import _Input as I
+from clios.operator._Operator import _Param as P
 
 
 def _toBool(s: str) -> bool:

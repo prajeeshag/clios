@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Type, TypeGuard
 
-from clio.exceptions import TokenError
+from clios.exceptions import TokenError
 
 
 class ArgumentToken(ABC):

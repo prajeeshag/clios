@@ -4,16 +4,16 @@ from dataclasses import dataclass
 
 import pytest
 
-from clio.exceptions import ChainTypeError, OperatorNotFound, TokenError
-from clio.operation import Operation as Optn
-from clio.operation import ReadOperation as ROptn
-from clio.operation import WriteOperation as WOptn
-from clio.operator import Operator as Op
-from clio.operator import Reader as Rdr
-from clio.operator import Writer as Wtr
-from clio.operator._Operator import _Input as I
-from clio.tokenizer import FilePathToken as Ft
-from clio.tokenizer import OperatorToken as Ot
+from clios.exceptions import ChainTypeError, OperatorNotFound, TokenError
+from clios.operation import Operation as Optn
+from clios.operation import ReadOperation as ROptn
+from clios.operation import WriteOperation as WOptn
+from clios.operator import Operator as Op
+from clios.operator import Reader as Rdr
+from clios.operator import Writer as Wtr
+from clios.operator._Operator import _Input as I
+from clios.tokenizer import FilePathToken as Ft
+from clios.tokenizer import OperatorToken as Ot
 
 
 @dataclass

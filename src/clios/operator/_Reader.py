@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from clio.operator._utils import inspect_function
+from clios.operator._utils import inspect_function
 
 from ..exceptions import InvalidFunction
 from ._utils import type2str

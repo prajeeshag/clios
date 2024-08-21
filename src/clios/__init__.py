@@ -1,3 +1,3 @@
-from ._Clio import Clios
+from ._Clios import Clios
 
 __all__ = ["Clios"]

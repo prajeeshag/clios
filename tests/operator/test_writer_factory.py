@@ -1,8 +1,9 @@
 # type: ignore
 
 import pytest
-from clio.exceptions import InvalidFunction
-from clio.operator import writer_factory
+
+from clios.exceptions import InvalidFunction
+from clios.operator import writer_factory
 
 from .testdata.writer_invalid_fns import failing
 from .testdata.writer_valid_fns import passing

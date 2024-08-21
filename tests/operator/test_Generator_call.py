@@ -2,7 +2,8 @@
 import inspect
 
 import pytest
-from clio.operator import Generator
+
+from clios.operator import Generator
 
 _nil = inspect.Parameter.empty
 

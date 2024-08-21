@@ -2,8 +2,9 @@
 import inspect
 
 import pytest
-from clio.operator import Operator
-from clio.operator._Operator import _Input
+
+from clios.operator import Operator
+from clios.operator._Operator import _Input
 
 _nil = inspect.Parameter.empty
 

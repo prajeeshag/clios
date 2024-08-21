@@ -2,8 +2,8 @@
 
 import pytest
 
-from clio.exceptions import TokenError
-from clio.tokenizer.tokens import (
+from clios.exceptions import TokenError
+from clios.tokenizer.tokens import (
     FilePathToken,
     LeftSquareBracket,
     OperatorToken,

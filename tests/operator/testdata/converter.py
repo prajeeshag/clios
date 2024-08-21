@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from clio.exceptions import InvalidFunction
+from clios.exceptions import InvalidFunction
 
 
 @dataclass

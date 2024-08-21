@@ -2,14 +2,14 @@
 
 import pytest
 
-from clio.exceptions import TokenError
-from clio.tokenizer.tokens import (
+from clios.exceptions import TokenError
+from clios.tokenizer.tokens import (
     Colon,
     FilePathToken,
     LeftSquareBracket,
     RightSquareBracket,
 )
-from clio.tokenizer.tokens import OperatorToken as Optkn
+from clios.tokenizer.tokens import OperatorToken as Optkn
 
 
 @pytest.mark.parametrize(

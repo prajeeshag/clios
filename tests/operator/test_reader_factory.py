@@ -1,8 +1,9 @@
 # type: ignore
 
 import pytest
-from clio.exceptions import InvalidFunction
-from clio.operator import Reader, reader_factory
+
+from clios.exceptions import InvalidFunction
+from clios.operator import Reader, reader_factory
 
 from .testdata.reader_invalid_fns import failing
 

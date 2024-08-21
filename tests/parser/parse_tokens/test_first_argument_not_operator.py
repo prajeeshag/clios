@@ -1,9 +1,9 @@
 # type: ignore
 import pytest
 
-from clio.exceptions import OperatorNotFound
-from clio.tokenizer import FilePathToken as Ft
-from clio.tokenizer import OperatorToken as Ot
+from clios.exceptions import OperatorNotFound
+from clios.tokenizer import FilePathToken as Ft
+from clios.tokenizer import OperatorToken as Ot
 
 
 @pytest.mark.parametrize(

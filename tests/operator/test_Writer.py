@@ -1,6 +1,7 @@
 # type: ignore
 import pytest
-from clio.operator import Writer
+
+from clios.operator import Writer
 
 
 @pytest.mark.parametrize("params", [[1], [1, "s"], [1, "s", "z", "a"]])

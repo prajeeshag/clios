@@ -1,7 +1,8 @@
 # type: ignore
 
 import pytest
-from clio.operator import Reader, reader_factory
+
+from clios.operator import Reader, reader_factory
 
 
 def test_call(mocker):
