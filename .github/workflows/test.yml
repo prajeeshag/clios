@@ -24,15 +24,3 @@ jobs:
 
       - name: Run tests, lint, format, type
         run: tox
-      
-      - name: Build the documentation using tox
-        run: tox -e docs
-
-      - name: Deploy to GitHub Pages
-        if: success()
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html
-
-      

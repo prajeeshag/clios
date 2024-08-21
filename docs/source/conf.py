@@ -23,7 +23,7 @@ author = "Prajeesh Ag"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    "extensions.example2termynal",
+    "extensions.termynal",
 ]
 
 templates_path = ["_templates"]
