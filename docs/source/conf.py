@@ -23,6 +23,7 @@ author = "Prajeesh Ag"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "extensions.termynal",
     "extensions.example2termynal",
 ]
 

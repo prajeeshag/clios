@@ -11,7 +11,7 @@ class TermynalDirective(SphinxDirective):
 
     def run(self):
         TermynalDirective.instance_count += 1  # Increment the instance counter
-        unique_id = f"termynal{TermynalDirective.instance_count}"
+        unique_id = f"example2termynal{TermynalDirective.instance_count}"
         base_command = self.arguments[0]
         parameters_module = self.arguments[1]
 

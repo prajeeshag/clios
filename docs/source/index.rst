@@ -5,9 +5,10 @@ Clios, create chainable command line operators
 
 Installation
 ------------
-.. code-block:: console
-
-   pip install clios
+.. termynal::
+   :input: pip install clios
+   :progress:
+   
 
 Example: numbers.py
 --------------------
