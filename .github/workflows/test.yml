@@ -1,0 +1,38 @@
+name: Test 
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main  # trigger CI on pushes to the main branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install tox
+        run: pip install tox>=4
+
+      - name: Run tests, lint, format, type
+        run: tox
+      
+      - name: Build the documentation using tox
+        run: tox -e docs
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+
+      
