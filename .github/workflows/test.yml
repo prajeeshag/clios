@@ -7,7 +7,37 @@ on:
       - main  # trigger CI on pushes to the main branch
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+    - uses: actions/checkout@v4
+    # For pull requests it's not necessary to checkout the code but for the main branch it is
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          src:
+            - src/**
+            - tests/**
+            - examples/**
+            - requirements-test.txt
+            - requirements.txt
+            - pyproject.toml
+            - tox.ini
+            - .github/workflows/test.yml
+
+
   test:
+    needs:
+      - changes
+    if: ${{ needs.changes.outputs.src == 'true' }} 
+
     runs-on: ubuntu-latest
 
     steps:
