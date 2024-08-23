@@ -9,5 +9,6 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports.ruff": "explicit"
         },
-    }
+    },
+    "python.defaultInterpreterPath": ".tox/dev/bin/python"
 }

@@ -2,22 +2,22 @@ name: Test
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main  
   push:
     branches:
-      - main  # trigger CI on pushes to the main branch
+      - main  
 
 jobs:
-  changes:
+  test:
     runs-on: ubuntu-latest
     # Required permissions
     permissions:
       pull-requests: read
     # Set job outputs to values from filter step
-    outputs:
-      src: ${{ steps.filter.outputs.src }}
     steps:
     - uses: actions/checkout@v4
-    # For pull requests it's not necessary to checkout the code but for the main branch it is
     - uses: dorny/paths-filter@v3
       id: filter
       with:
@@ -27,30 +27,18 @@ jobs:
             - tests/**
             - examples/**
             - requirements-test.txt
-            - requirements.txt
             - pyproject.toml
             - tox.ini
             - .github/workflows/test.yml
 
+    - name: Set up Python
+      if: steps.filter.outputs.src == 'true'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
 
-  test:
-    needs:
-      - changes
-    if: ${{ needs.changes.outputs.src == 'true' }} 
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install tox
-        run: pip install tox>=4
-
-      - name: Run tests, lint, format, type
-        run: tox
+    - name: Install tox and run tests
+      if: steps.filter.outputs.src == 'true'
+      run: |
+          pip install tox>=4
+          tox
