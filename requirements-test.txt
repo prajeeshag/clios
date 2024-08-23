@@ -1,4 +1,7 @@
 pytest
-pytest-sugar
 pytest_mock
+pytest-sugar
 pytest-cov
+black
+ruff
+pyright
