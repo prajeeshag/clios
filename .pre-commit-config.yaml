@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+        args:
+          - --unsafe
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: no-commit-to-branch
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.7.3
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+      - id: ruff-format
+
+  - repo: https://github.com/ljnsn/cz-conventional-gitmoji
+    rev: v0.6.1
+    hooks:
+      - id: conventional-gitmoji
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.30.0
+    hooks:
+      - id: commitizen
+        additional_dependencies: [cz-conventional-gitmoji]
+
+  - repo: https://github.com/prajeeshag/readme_from_mkdocs
+    rev: v0.0.3
+    hooks:
+      - id: readme-from-mkdocs
+
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+  - commit-msg
+  - pre-merge-commit

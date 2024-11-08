@@ -1,0 +1,7 @@
+version = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "clios"
+version = "0.1.1.dev10+ga2839b5.d20241108144233"
+source = { editable = "." }
