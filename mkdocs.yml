@@ -1,0 +1,14 @@
+site_name: Clios
+repo_name: prajeeshag/clios
+repo_url: https://github.com/prajeeshag/clios
+theme:
+    name: material
+
+markdown_extensions:
+    - attr_list
+
+plugins:
+    - termynal
+
+nav:
+    - Clios: index.md
