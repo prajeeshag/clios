@@ -17,8 +17,8 @@ repository = "https://github.com/prajeeshag/clios"
 documentation = "https://prajeeshag.github.io/clios"
 
 [tool.setuptools.packages.find]
-where = ["src"]
-exclude = ["tests", "docs"]
+where = ["."]
+include = ["clios"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "examples"]

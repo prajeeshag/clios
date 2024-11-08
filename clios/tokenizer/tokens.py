@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -5,6 +6,15 @@ from typing import Type, TypeGuard
 
 from clios.exceptions import TokenError
 
+
+class Token(Enum):
+    LEFT_BRACKET = re.compile(r"[")
+    RIGHT_BRACKET = re.compile(r"]")
+    COLON = re.compile(r":")
+    OPERATOR = re.compile(r"^-(\w\w+)(\,(\S)*)*\,?")
+    STRING = re.compile(r"(^[^\-\s\[\]\:].*$)|(^-\d+(\.\d+)?$)")
+    
+    
 
 class ArgumentToken(ABC):
     @classmethod
