@@ -29,3 +29,16 @@ local_scheme = "node-and-timestamp"
 
 [tool.commitizen]
 name = "cz_gitmoji"
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5.44",
+    "termynal>=0.12.1",
+]
+test = [
+    "pytest>=8.3.3",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-sugar>=1.0.0",
+]

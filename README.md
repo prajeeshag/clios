@@ -6,6 +6,16 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/clios)
 [![codecov](https://codecov.io/gh/prajeeshag/clios/graph/badge.svg?token=UNNUW30IQL)](https://codecov.io/gh/prajeeshag/clios)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
+---
+
 Clios, create chainable command line operators in Python
+
+## Installation
+<!--termynal-->
+```
+$ pip install clios
+```
+
 
 [**Tutorial**](https://prajeeshag.github.io/clios)
