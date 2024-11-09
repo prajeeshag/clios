@@ -3,7 +3,15 @@
 import pytest
 
 from clios.exceptions import TokenError
-from clios.tokenizer import OperatorToken, TokenType
+from clios.tokenizer import (
+    ColonToken,
+    LeftBracketToken,
+    OperatorToken,
+    RightBracketToken,
+    StringToken,
+    TokenType,
+    tokenize,
+)
 
 
 @pytest.mark.parametrize(
@@ -26,6 +34,8 @@ from clios.tokenizer import OperatorToken, TokenType
         ["some path out.nc", TokenType.STRING],
         ["1", TokenType.STRING],
         ["-1", TokenType.STRING],
+        ["-100", TokenType.STRING],
+        ["-s:ssd", TokenType.INVALID],
     ],
 )
 def test_TokenType(input: str, expected: TokenType):
@@ -103,3 +113,46 @@ class Test_OperatorToken:
     def test_valid(self, string: str, expected):
         opArg = OperatorToken(string)
         assert (opArg.name, opArg.args, opArg.kwds) == expected
+
+
+class Test_tokenize:
+    @pytest.mark.parametrize(
+        "args,expected",
+        [
+            (["-operator"], (OperatorToken("-operator"),)),
+            (
+                ["-operator", "hello"],
+                (OperatorToken("-operator"), StringToken("hello")),
+            ),
+            (
+                ["-operator", "hello", ":"],
+                (OperatorToken("-operator"), StringToken("hello"), ColonToken()),
+            ),
+            (
+                ["[", ":", "]"],
+                (LeftBracketToken(), ColonToken(), RightBracketToken()),
+            ),
+            (
+                ["-100"],
+                (StringToken("-100"),),
+            ),
+            (
+                ["-100", "-200"],
+                (StringToken("-100"), StringToken("-200")),
+            ),
+        ],
+    )
+    def test_valid(self, args, expected):
+        assert tokenize(args) == expected
+
+    def test_tokenize_empty_list(self):
+        args = []
+        expected = ()
+        assert tokenize(args) == expected
+
+    def test_invalid(self):
+        with pytest.raises(TokenError) as result:
+            tokenize(["-inv[sk"])
+
+        assert result.value.token == "-inv[sk"
+        assert str(result.value) == "Unknown pattern"

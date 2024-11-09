@@ -35,7 +35,7 @@ class OperatorToken(Token):
 
     @classmethod
     def match(cls, string: str) -> bool:
-        pattern = re.compile(r"^-(\w\w+)(\,(\S)*)*\,?")
+        pattern = re.compile(r"^-[a-zA-Z](\w+)(\,(\S)*)*\,?")
         return bool(pattern.fullmatch(string))
 
     def __post_init__(self):
