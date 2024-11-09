@@ -20,13 +20,19 @@ from clios.tokenizer import OperatorToken, TokenType
         ["-simple,k2=v1,k1=v2,k2=v2", TokenType.OPERATOR],
         ["-operator,abc=", TokenType.OPERATOR],
         ["-operator,abc=dfg,123", TokenType.OPERATOR],
+        ["/some/path/out.nc", TokenType.STRING],
+        ["some/path/out.nc", TokenType.STRING],
+        ["so-me/path/out.nc", TokenType.STRING],
+        ["some path out.nc", TokenType.STRING],
+        ["1", TokenType.STRING],
+        ["-1", TokenType.STRING],
     ],
 )
 def test_TokenType(input: str, expected: TokenType):
     assert TokenType(input) == expected
 
 
-class Test_Optkn:
+class Test_OperatorToken:
     parameters_invalid = (
         ("-simple,k1=v1=v2", (8, "Invalid parameter")),
         ("-simple,k1=v1,k1=v2", (14, "Parameter already assigned")),
@@ -97,22 +103,3 @@ class Test_Optkn:
     def test_valid(self, string: str, expected):
         opArg = OperatorToken(string)
         assert (opArg.name, opArg.args, opArg.kwds) == expected
-
-
-# @pytest.mark.parametrize(
-#     "input,expected",
-#     [
-#         ["-some/path/out.nc", None],
-#         ["[", None],
-#         ["]", None],
-#         [":", None],
-#         ["/some/path/out.nc", StringToken("/some/path/out.nc")],
-#         ["some/path/out.nc", StringToken("some/path/out.nc")],
-#         ["so-me/path/out.nc", StringToken("so-me/path/out.nc")],
-#         ["some path out.nc", StringToken("some path out.nc")],
-#         ["1", StringToken("1")],
-#         ["-1", StringToken("-1")],
-#     ],
-# )
-# def test_FilePathToken(input: str, expected: bool):
-#     assert FilePathToken.factory(input) == expected
