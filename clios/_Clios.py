@@ -4,6 +4,7 @@ from .operation import WriteOperation
 from .operator import operator_factory, reader_factory, writer_factory
 from .parser import Parser
 from .registry import OperatorRegistry, ReaderRegistry, WriterRegistry
+from .tokenizer import tokenize
 
 
 class Clios:
@@ -39,5 +40,5 @@ class Clios:
 
     def parse_args(self, args: list[str]) -> WriteOperation:
         parser = Parser(self._operators, self._writers, self._readers)
-        tokens = parser.tokenize(args)
+        tokens = tokenize(args)
         return parser.parse_tokens(tokens)
