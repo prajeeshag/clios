@@ -8,8 +8,7 @@ from .operation import (
 )
 from .operator import Generator, Operator
 from .registry import OperatorRegistry, ReaderRegistry, WriterRegistry
-from .tokenizer import Tokenizer
-from .tokenizer.tokens import ArgumentToken, FilePathToken, OperatorToken
+from .tokenizer import OperatorToken, StringToken, Token
 
 # TODO: Implement parameter validation during CallTree construction
 
@@ -24,11 +23,8 @@ class Parser:
         self._operators = operators
         self._writers = writers
         self._readers = readers
-        self._tokenizer: Tokenizer = Tokenizer([FilePathToken, OperatorToken])
 
-    def parse_tokens(
-        self, tokens: list[ArgumentToken], index: int = 0
-    ) -> WriteOperation:
+    def parse_tokens(self, tokens: tuple[Token, ...], index: int = 0) -> WriteOperation:
         token_list = list(tokens)
 
         opTkn = token_list[0]
@@ -48,7 +44,7 @@ class Parser:
         for _ in range(wrtr.num_outputs):
             try:
                 outputtkn = token_list.pop()
-                if not isinstance(outputtkn, FilePathToken):
+                if not isinstance(outputtkn, StringToken):
                     raise TokenError(
                         msg=f"Missing output file: got '{outputtkn}' instead of filename"
                     )
@@ -68,12 +64,12 @@ class Parser:
 
     def _parse_tokens(
         self,
-        token_list: list[ArgumentToken],
+        token_list: list[Token],
         opTkn: OperatorToken,
         op: Operator | Generator,
     ):
         if isinstance(op, Generator):
-            return GeneratorOperation(op, opTkn.params, opTkn.kwparams)
+            return GeneratorOperation(op, opTkn.args, opTkn.kwds)
 
         child_optns: list[ChainableOperation] = []
 
@@ -119,7 +115,7 @@ class Parser:
                     rdr = self._readers.get(op.input.dtypes[i])
                     child_optns.append(ReadOperation(rdr, str(tkn)))
 
-        optn = Operation(op, tuple(child_optns), opTkn.params, opTkn.kwparams)
+        optn = Operation(op, tuple(child_optns), opTkn.args, opTkn.kwds)
         return optn
 
     def _get_operator(self, tkn: OperatorToken):
@@ -128,9 +124,3 @@ class Parser:
         except KeyError:
             raise OperatorNotFound(tkn.name)
         return op
-
-    def tokenize(self, args: list[str]) -> list[ArgumentToken]:
-        tokens: list[ArgumentToken] = []
-        for arg in args:
-            tokens.append(self._tokenizer.tokenize(arg))
-        return tokens
