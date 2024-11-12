@@ -10,9 +10,7 @@ authors = [{ name = "Prajeesh Ag", email = "prajeeshag@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "pydantic==2.9.*",
-]
+dependencies = ["pydantic==2.9.*"]
 
 [project.urls]
 homepage = "https://prajeeshag.github.io/clios"
@@ -34,11 +32,7 @@ local_scheme = "node-and-timestamp"
 name = "cz_gitmoji"
 
 [dependency-groups]
-docs = [
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.5.44",
-    "termynal>=0.12.1",
-]
+docs = ["mkdocs>=1.6.1", "mkdocs-material>=9.5.44", "termynal>=0.12.1"]
 test = [
     "pytest>=8.3.3",
     "pytest-cov>=6.0.0",
