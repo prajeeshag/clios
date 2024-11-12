@@ -85,7 +85,7 @@ wheels = [
 
 [[package]]
 name = "clios"
-version = "0.1.1.dev18+ga59bf36.d20241111152931"
+version = "0.1.1.dev19+g20e1b95.d20241112141036"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
