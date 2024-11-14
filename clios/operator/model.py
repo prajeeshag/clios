@@ -34,6 +34,26 @@ class Parameter:
     default: Any = None
 
     def __post_init__(self):
+        self.validate_input_param()
+        self.initialize_type_adapter()
+
+    def validate_input_param(self):
+        if not self.is_input:
+            return
+        assert self.kind not in (
+            ParameterKind.VAR_POSITIONAL,
+            ParameterKind.VAR_KEYWORD,
+        ), f"Input parameter `{self.name}` cannot be of `VARIADIC` kind"
+
+        assert (
+            self.kind != ParameterKind.KEYWORD_ONLY
+        ), f"Input parameter `{self.name}` cannot be keyword-only argument"
+
+        assert (
+            self.default is None
+        ), f"Input parameter `{self.name}` cannot have a default value"
+
+    def initialize_type_adapter(self):
         annotation = self.annotation
         if self.param_type.strict:
             if self.is_variadic_input:
@@ -89,6 +109,10 @@ class Parameter:
     def is_positional(self):
         return self.kind == ParameterKind.POSITIONAL_ONLY
 
+    @property
+    def required(self):
+        return self.default is None
+
 
 @dataclass
 class ReturnType:
@@ -133,30 +157,67 @@ class OperatorFn:
     callback: Callable[..., Any]
 
     @cached_property
-    def positional_params(self) -> tuple[Parameter, ...]:
+    def args(self) -> tuple[Parameter, ...]:
         params = [param for param in self.parameters if param.is_positional_param]
         return tuple(params)
 
     @cached_property
-    def var_positional_param(self) -> Parameter | None:
+    def var_args(self) -> Parameter | None:
         for param in self.parameters:
             if param.kind == ParameterKind.VAR_POSITIONAL:
                 return param
         return None
 
     @cached_property
-    def keyword_params(self) -> tuple[Parameter, ...]:
+    def kwds(self) -> tuple[Parameter, ...]:
         params = [param for param in self.parameters if param.is_keyword_param]
         return tuple(params)
 
     @cached_property
-    def var_keyword_param(self) -> Parameter | None:
+    def var_kwds(self) -> Parameter | None:
         for param in self.parameters:
             if param.kind == ParameterKind.VAR_KEYWORD:
                 return param
         return None
 
     @cached_property
-    def input_params(self) -> tuple[Parameter, ...]:
-        params = [param for param in self.parameters if param.is_input]
+    def inputs(self) -> tuple[Parameter, ...]:
+        params = [
+            param
+            for param in self.parameters
+            if param.is_input and not param.is_variadic_input
+        ]
         return tuple(params)
+
+    @cached_property
+    def var_input(self) -> Parameter | None:
+        for param in self.parameters:
+            if param.is_variadic_input:
+                return param
+        return None
+
+    @cached_property
+    def required_args(self) -> tuple[Parameter, ...]:
+        params = [
+            param
+            for param in self.parameters
+            if param.is_positional_param and param.required
+        ]
+        return tuple(params)
+
+    @cached_property
+    def required_kwds(self) -> tuple[Parameter, ...]:
+        params = [
+            param
+            for param in self.parameters
+            if param.is_keyword_param and param.required
+        ]
+        return tuple(params)
+
+    @cached_property
+    def required_kwds_keys(self) -> tuple[str, ...]:
+        return tuple(param.name for param in self.required_kwds)
+
+    @cached_property
+    def kwds_keys(self) -> tuple[str, ...]:
+        return tuple(param.name for param in self.kwds)

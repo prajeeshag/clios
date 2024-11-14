@@ -84,20 +84,6 @@ def get_parameter(param: IParameter) -> Parameter:
 
     param_type = get_parameter_type_annotation(param)
 
-    if isinstance(param_type, Input):
-        assert param.kind not in (
-            IParameter.VAR_POSITIONAL,
-            IParameter.VAR_KEYWORD,
-        ), f"Input parameter `{param.name}` cannot be of `VARIADIC` kind"
-
-        assert (
-            param.kind != IParameter.KEYWORD_ONLY
-        ), f"Input parameter `{param.name}` cannot be keyword-only argument"
-
-        assert (
-            default is None
-        ), f"Input parameter `{param.name}` cannot have a default value"
-
     try:
         parameter = Parameter(
             name=param.name,
@@ -110,10 +96,15 @@ def get_parameter(param: IParameter) -> Parameter:
         raise AssertionError(
             f"Unsupported type annotation for parameter `{param.name}`"
         )
-    except ValidationError:
-        raise AssertionError(
-            f"Unsupported type annotation for parameter `{param.name}`"
-        )
+    except ValidationError as e:
+        error = e.errors()[0]
+        if error["type"] == "assertion_error":
+            if "ctx" in error and "error" in error["ctx"]:
+                raise error["ctx"]["error"]
+            else:
+                raise
+        else:
+            raise
     except ValueError as e:
         if str(e) == "Variable tuples can only have one type":
             raise AssertionError(

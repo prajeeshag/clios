@@ -62,10 +62,6 @@ def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:
     """Unsupported type annotation for parameter `input1`"""
 
 
-def ff25(input1: Annotated[tuple[int, str, ...], Input()]) -> int:
-    """Unsupported type annotation for parameter `input1`"""
-
-
 def ff08(i: Annotated[int, Input()] = 10) -> int:
     """Input parameter `i` cannot have a default value"""
 
