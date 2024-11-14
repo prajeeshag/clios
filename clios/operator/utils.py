@@ -26,13 +26,8 @@ def get_operator_fn(func: Callable[..., Any]) -> OperatorFn:
     signature = get_typed_signature(func)
     Parameters: list[Parameter] = []
 
-    var_input_encountered = False
     for param in signature.parameters.values():
         parameter = get_parameter(param)
-        if var_input_encountered and parameter.is_input:
-            assert False, "Cannot have more Input parameters after an Input parameter of type `list`"
-        if parameter.is_variadic_input:
-            var_input_encountered = True
         Parameters.append(parameter)
 
     return_annotation = signature.return_annotation

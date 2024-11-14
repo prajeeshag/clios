@@ -32,9 +32,10 @@ class _OpBase:
                     raise ArgumentError(f"Unexpected keyword argument: {key}")
 
     def verify_arguments(self):
-        if len(self.args) < len(self.operator_fn.required_args):
+        len_required_args = len(self.operator_fn.required_args)
+        if len(self.args) < len_required_args:
             raise ArgumentError(
-                f"Expected at least {len(self.operator_fn.required_args)} positional arguments, got {len(self.args)}"
+                f"Expected at least {len_required_args} positional arguments, got {len(self.args)}"
             )
         if (
             len(self.args) > len(self.operator_fn.args)

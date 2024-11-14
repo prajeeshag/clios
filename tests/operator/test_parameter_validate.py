@@ -54,17 +54,3 @@ def test_input_strict():
     assert param.validate(1) == 1
     with pytest.raises(ValidationError):
         param.validate("1")
-
-
-def test_var_input_strict():
-    param = Parameter(
-        name="param",
-        kind=ParameterKind.POSITIONAL_ONLY,
-        param_type=Input(),
-        annotation=list[int],
-    )
-    assert param.validate([1]) == [1]
-    with pytest.raises(ValidationError):
-        param.validate(("1",))
-    with pytest.raises(ValidationError):
-        param.validate(["1"])

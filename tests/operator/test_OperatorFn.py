@@ -16,9 +16,9 @@ def parameters():
         ),
         Parameter(
             name="var_input",
-            kind=ParameterKind.POSITIONAL_ONLY,
+            kind=ParameterKind.VAR_POSITIONAL,
             param_type=Input(strict=True),
-            annotation=list[int],
+            annotation=int,
         ),
         Parameter(
             name="positional_required",

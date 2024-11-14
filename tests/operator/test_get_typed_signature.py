@@ -149,5 +149,4 @@ def test_with_nested_type_hints():
         return_annotation=None,
     )
     returned = get_typed_signature(test_function)
-    print(returned)
     assert returned == expected_signature
