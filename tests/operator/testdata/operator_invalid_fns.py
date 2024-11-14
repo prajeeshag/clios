@@ -1,167 +1,75 @@
 # type: ignore
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any
 
-from clios.exceptions import InvalidFunction
+from clios.operator.params import Input
 
-from .utils import e_args, list_functions
+from .utils import list_functions
 
 
 @dataclass
 class InputFailing:
     fn: Any
-    e: InvalidFunction
+    e: AssertionError
 
 
 def ff00(i) -> int:
-    """
-    Should have valid type annotation
-    i
-    """
+    """Missing type annotation for parameter `i`"""
 
 
-def ff01(ik=1) -> int:
-    """
-    Should have valid type annotation
-    ik
-    """
+def ff01(input0) -> int:
+    """Missing type annotation for parameter `input0`"""
 
 
-def ff02(b: bool) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    b
-    """
+def ff15(input1: Any) -> int:
+    """Input parameter `input1` cannot be of type `Any`"""
 
 
-def ff03(bk: bool = False) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    bk
-    """
+def ff19(input2: [Any, Input()]) -> int:
+    """Unsupported type annotation for parameter `input2`"""
 
 
-def ff04(input: str = "") -> int:
-    """
-    The name 'input' is reserved for the `input` parameter and cannot used as an optional parameter
-    """
+def ff18(input2: Annotated[Any, Input()]) -> int:
+    """Input parameter `input2` cannot be of type `Any`"""
 
 
-def ff05(input: tuple[int, str, ...]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff16(*args: Annotated[int, Input()]) -> int:
+    """Input parameter `args` cannot be of `VARIADIC` kind"""
 
 
-def ff06(input: list[int, str]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff17(**kwds: Annotated[int, Input()]) -> int:
+    """Input parameter `kwds` cannot be of `VARIADIC` kind"""
 
 
-def ff07(input: tuple[int, ..., str]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff20(input1: list[int], input2: int) -> int:
+    """Cannot have more Input parameters after an Input parameter of type `list`"""
 
 
-def ff08(input: tuple[..., str]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff21(input1: list) -> int:
+    """Missing type argument for generic class in parameter `input1`"""
 
 
-def ff09(input: tuple[...]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff22(input1: tuple) -> int:
+    """Missing type argument for generic class in parameter `input1`"""
 
 
-def ff10(input: list[int, ...]) -> int:
-    """
-    Should have valid type annotation
-    input
-    """
+def ff23(input1: Annotated[tuple, Input()]) -> int:
+    """Missing type argument for generic class in parameter `input1`"""
 
 
-def ff13(*b: bool) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    *b
-    """
+def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:
+    """Unsupported type annotation for parameter `input1`"""
 
 
-def ff14(ik: int = 10, *params: str) -> int:
-    """
-    Variadic positional arguments should be before keyword-arguments
-    *params
-    """
+def ff25(input1: Annotated[tuple[int, str, ...], Input()]) -> int:
+    """Unsupported type annotation for parameter `input1`"""
 
 
-def ff15(ik: int, input: str, *params: str) -> int:
-    """
-    If present, the 'input' parameter should be the first parameter
-    """
-
-
-def ff16(i: list[str]) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    i
-    """
-
-
-def ff17(j: int, k: dict[str, str] = {"k": "j"}) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    k
-    """
-
-
-def ff18(j: int, *k: dict[str, str]) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    *k
-    """
-
-
-def ff19(j: int, **k: dict[str, str]) -> int:
-    """
-    Non-(str,int,float) types should be annotated with a <Reader>
-    **k
-    """
-
-
-def ff23() -> list[int]:
-    """
-    Type <list[int]> is not supported
-    """
-
-
-def ff24() -> Any:
-    """
-    Type <typing.Any> is not supported
-    """
-
-
-def ff33():
-    """
-    Return type cannot be 'None'
-    """
-
-
-def ff34() -> None:
-    """
-    Return type cannot be 'None'
-    """
+def ff08(i: int = 10) -> int:
+    """Input parameter `i` cannot have a default value"""
 
 
 _current_module = sys.modules[__name__]
 ff_fns = list_functions(_current_module, "ff")
-failing = [InputFailing(fn, InvalidFunction(*e_args(fn))) for fn in ff_fns]
+failing = [InputFailing(fn, AssertionError(fn.__doc__)) for fn in ff_fns]
