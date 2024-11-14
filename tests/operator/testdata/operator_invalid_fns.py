@@ -23,7 +23,7 @@ def ff01(input0) -> int:
 
 
 def ff15(input1: Any) -> int:
-    """Input parameter `input1` cannot be of type `Any`"""
+    """Parameter `input1` cannot be of type `Any`"""
 
 
 def ff19(input2: [Any, Input()]) -> int:
@@ -31,7 +31,7 @@ def ff19(input2: [Any, Input()]) -> int:
 
 
 def ff18(input2: Annotated[Any, Input()]) -> int:
-    """Input parameter `input2` cannot be of type `Any`"""
+    """Parameter `input2` cannot be of type `Any`"""
 
 
 def ff16(*args: Annotated[int, Input()]) -> int:
@@ -42,7 +42,7 @@ def ff17(**kwds: Annotated[int, Input()]) -> int:
     """Input parameter `kwds` cannot be of `VARIADIC` kind"""
 
 
-def ff20(input1: list[int], input2: int) -> int:
+def ff20(input1: Annotated[list[int], Input()], input2: Annotated[int, Input()]) -> int:
     """Cannot have more Input parameters after an Input parameter of type `list`"""
 
 
@@ -66,8 +66,16 @@ def ff25(input1: Annotated[tuple[int, str, ...], Input()]) -> int:
     """Unsupported type annotation for parameter `input1`"""
 
 
-def ff08(i: int = 10) -> int:
+def ff08(i: Annotated[int, Input()] = 10) -> int:
     """Input parameter `i` cannot have a default value"""
+
+
+def ff30(*, i: Annotated[int, Input()]) -> int:
+    """Input parameter `i` cannot be keyword-only argument"""
+
+
+def ff31(**i: Annotated[int, Input()]) -> int:
+    """Input parameter `i` cannot be of `VARIADIC` kind"""
 
 
 _current_module = sys.modules[__name__]

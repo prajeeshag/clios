@@ -28,7 +28,7 @@ class InvalidFunction(Exception):
         super().__init__(msg)
 
 
-class InvalidArguments(Exception):
+class ArgumentError(Exception):
     pass
 
 

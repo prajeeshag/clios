@@ -2,12 +2,12 @@ import inspect
 from inspect import Parameter as IParameter
 from typing import Annotated, Any, Callable, ForwardRef, Generic, get_args, get_origin
 
-from pydantic import PydanticSchemaGenerationError
+from pydantic import PydanticSchemaGenerationError, ValidationError
 from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
 
-from clios.operator.params import Input, Param
+from clios.operator.params import Input, Output, Param, ParamTypes
 
-from .model import InputType, OperatorFn, Parameter, ParameterKind
+from .model import OperatorFn, Parameter, ParameterKind, ReturnType
 
 _builtin_generic_types = [  # type: ignore
     list,
@@ -19,7 +19,6 @@ _builtin_generic_types = [  # type: ignore
 
 
 def _is_generic_type(t: Any) -> bool:
-    print("t=", t)
     return issubclass(t, Generic) or t in _builtin_generic_types
 
 
@@ -30,22 +29,32 @@ def get_operator_fn(func: Callable[..., Any]) -> OperatorFn:
     var_input_encountered = False
     for param in signature.parameters.values():
         parameter = get_parameter(param)
-        if var_input_encountered and parameter.input_type in (
-            InputType.INPUT,
-            InputType.VAR_INPUT,
-        ):
+        if var_input_encountered and parameter.is_input:
             assert False, "Cannot have more Input parameters after an Input parameter of type `list`"
-        if parameter.input_type == InputType.VAR_INPUT:
+        if parameter.is_variadic_input:
             var_input_encountered = True
         Parameters.append(parameter)
 
-    return_type = signature.return_annotation
+    return_annotation = signature.return_annotation
+
+    output_info = get_output_info(return_annotation)
 
     return OperatorFn(
         parameters=tuple(Parameters),
-        return_type=return_type,
+        return_type=ReturnType(return_annotation, output_info),
         callback=func,
     )
+
+
+def get_output_info(return_annotation: Any) -> Output:
+    if get_origin(return_annotation) is not Annotated:
+        return Output()
+
+    for arg in reversed(get_args(return_annotation)[1:]):
+        if isinstance(arg, Output):
+            return arg
+
+    return Output()
 
 
 def get_parameter(param: IParameter) -> Parameter:
@@ -57,7 +66,7 @@ def get_parameter(param: IParameter) -> Parameter:
         if get_origin(param.annotation) is Annotated
         else param.annotation
     )
-    assert type_ is not Any, f"Input parameter `{param.name}` cannot be of type `Any`"
+    assert type_ is not Any, f"Parameter `{param.name}` cannot be of type `Any`"
 
     try:
         is_generic = _is_generic_type(type_)
@@ -69,34 +78,22 @@ def get_parameter(param: IParameter) -> Parameter:
         not is_generic
     ), f"Missing type argument for generic class in parameter `{param.name}`"
 
-    parameter_type = get_annotated_parameter_type(param)
-
-    if parameter_type is None:
-        if param.kind in (
-            IParameter.VAR_POSITIONAL,
-            IParameter.VAR_KEYWORD,
-        ):
-            parameter_type = InputType.PARAMETER
-        else:
-            if get_origin(type_) is list:
-                parameter_type = InputType.VAR_INPUT
-            else:
-                parameter_type = InputType.INPUT
-    elif parameter_type == InputType.INPUT:
-        assert param.kind not in (
-            IParameter.VAR_POSITIONAL,
-            IParameter.VAR_KEYWORD,
-        ), f"Input parameter `{param.name}` cannot be of `VARIADIC` kind"
-        if get_origin(type_) is list:
-            parameter_type = InputType.VAR_INPUT
-        else:
-            parameter_type = InputType.INPUT
-
     default = param.default
     if param.default is inspect.Signature.empty:
         default = None
 
-    if parameter_type in [InputType.INPUT, InputType.VAR_INPUT]:
+    param_type = get_parameter_type_annotation(param)
+
+    if isinstance(param_type, Input):
+        assert param.kind not in (
+            IParameter.VAR_POSITIONAL,
+            IParameter.VAR_KEYWORD,
+        ), f"Input parameter `{param.name}` cannot be of `VARIADIC` kind"
+
+        assert (
+            param.kind != IParameter.KEYWORD_ONLY
+        ), f"Input parameter `{param.name}` cannot be keyword-only argument"
+
         assert (
             default is None
         ), f"Input parameter `{param.name}` cannot have a default value"
@@ -105,11 +102,15 @@ def get_parameter(param: IParameter) -> Parameter:
         parameter = Parameter(
             name=param.name,
             kind=ParameterKind(param.kind),
-            input_type=parameter_type,
+            param_type=param_type,
             annotation=param.annotation,
             default=default,
         )
     except PydanticSchemaGenerationError:
+        raise AssertionError(
+            f"Unsupported type annotation for parameter `{param.name}`"
+        )
+    except ValidationError:
         raise AssertionError(
             f"Unsupported type annotation for parameter `{param.name}`"
         )
@@ -124,17 +125,13 @@ def get_parameter(param: IParameter) -> Parameter:
     return parameter
 
 
-def get_annotated_parameter_type(param: inspect.Parameter) -> InputType | None:
-    if get_origin(param.annotation) is not Annotated:
-        return None
-
-    annotated_args = get_args(param.annotation)
-
-    for arg in reversed(annotated_args):
-        if isinstance(arg, (Param, Input)):
-            if isinstance(arg, Param):
-                return InputType.PARAMETER
-            return InputType.INPUT
+def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes:
+    if get_origin(param.annotation) is Annotated:
+        annotated_args = get_args(param.annotation)
+        for arg in reversed(annotated_args):
+            if isinstance(arg, (Param, Input)):
+                return arg
+    return Param()
 
 
 def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:
