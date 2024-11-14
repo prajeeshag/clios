@@ -1,40 +1,86 @@
 # type: ignore
 
-import pytest
+from typing import Annotated
 
-from clios.operator.model import InputType, Parameter, ParameterKind
+import pytest
+from pydantic import Strict
+
+from clios.operator.model import Parameter, ParameterKind
+from clios.operator.params import Input, Param
 
 
 @pytest.fixture
 def mock_type_adapter(mocker):
-    return mocker.patch("clios.operator.model.TypeAdapter")
+    mocked_type_adapter = mocker.patch("clios.operator.model.TypeAdapter")
+    mocked_type_adapter.return_value = "type_adapter"
+    return mocked_type_adapter
 
 
 def test_post_init_with_var_positional_kind(mock_type_adapter):
-    Parameter(
+    param = Parameter(
         name="param",
         kind=ParameterKind.VAR_POSITIONAL,
-        input_type=InputType.PARAMETER,
+        param_type=Param(),
         annotation=int,
     )
     mock_type_adapter.assert_called_once_with(list[int])
+    assert param._type_adapter == "type_adapter"
 
 
 def test_post_init_with_var_keyword_kind(mock_type_adapter):
-    Parameter(
+    param = Parameter(
         name="param",
         kind=ParameterKind.VAR_KEYWORD,
-        input_type=InputType.PARAMETER,
+        param_type=Param(),
         annotation=int,
     )
     mock_type_adapter.assert_called_once_with(dict[str, int])
+    assert param._type_adapter == "type_adapter"
 
 
 def test_post_init_with_positional_only_kind(mock_type_adapter):
-    Parameter(
+    param = Parameter(
         name="param",
         kind=ParameterKind.POSITIONAL_ONLY,
-        input_type=InputType.PARAMETER,
+        param_type=Param(),
         annotation=int,
     )
     mock_type_adapter.assert_called_once_with(int)
+    assert param._type_adapter == "type_adapter"
+
+
+def test_post_init_with_strict(mock_type_adapter):
+    param = Parameter(
+        name="param",
+        kind=ParameterKind.POSITIONAL_ONLY,
+        param_type=Param(strict=True),
+        annotation=int,
+    )
+    mock_type_adapter.assert_called_once_with(Annotated[int, Strict()])
+    assert param._type_adapter == "type_adapter"
+
+
+def test_post_init_with_var_input(mock_type_adapter):
+    param = Parameter(
+        name="param",
+        kind=ParameterKind.POSITIONAL_ONLY,
+        param_type=Input(strict=True),
+        annotation=list[int],
+    )
+    mock_type_adapter.assert_called_once_with(
+        Annotated[list[Annotated[int, Strict()]], Strict()]
+    )
+    assert param._type_adapter == "type_adapter"
+
+
+def test_post_init_with_extra_annotation(mock_type_adapter):
+    param = Parameter(
+        name="param",
+        kind=ParameterKind.POSITIONAL_ONLY,
+        param_type=Input(strict=True),
+        annotation=Annotated[list[int], "extra annotation"],
+    )
+    mock_type_adapter.assert_called_once_with(
+        Annotated[list[Annotated[int, Strict()]], "extra annotation", Strict()]
+    )
+    assert param._type_adapter == "type_adapter"
