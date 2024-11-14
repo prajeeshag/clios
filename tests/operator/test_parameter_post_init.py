@@ -23,7 +23,7 @@ def test_post_init_with_var_positional_kind(mock_type_adapter):
         param_type=Param(),
         annotation=int,
     )
-    mock_type_adapter.assert_called_once_with(list[int])
+    mock_type_adapter.assert_called_once_with(int)
     assert param._type_adapter == "type_adapter"
 
 
@@ -34,7 +34,7 @@ def test_post_init_with_var_keyword_kind(mock_type_adapter):
         param_type=Param(),
         annotation=int,
     )
-    mock_type_adapter.assert_called_once_with(dict[str, int])
+    mock_type_adapter.assert_called_once_with(int)
     assert param._type_adapter == "type_adapter"
 
 
@@ -63,13 +63,11 @@ def test_post_init_with_strict(mock_type_adapter):
 def test_post_init_with_var_input(mock_type_adapter):
     param = Parameter(
         name="param",
-        kind=ParameterKind.POSITIONAL_ONLY,
+        kind=ParameterKind.VAR_POSITIONAL,
         param_type=Input(strict=True),
-        annotation=list[int],
+        annotation=int,
     )
-    mock_type_adapter.assert_called_once_with(
-        Annotated[list[Annotated[int, Strict()]], Strict()]
-    )
+    mock_type_adapter.assert_called_once_with(Annotated[int, Strict()])
     assert param._type_adapter == "type_adapter"
 
 
@@ -81,6 +79,6 @@ def test_post_init_with_extra_annotation(mock_type_adapter):
         annotation=Annotated[list[int], "extra annotation"],
     )
     mock_type_adapter.assert_called_once_with(
-        Annotated[list[Annotated[int, Strict()]], "extra annotation", Strict()]
+        Annotated[list[int], "extra annotation", Strict()]
     )
     assert param._type_adapter == "type_adapter"

@@ -51,8 +51,8 @@ def test_type_(param_input, param_kwds):
 
 
 def test_is_variadic_input(param_input, param_kwds):
-    assert param_input.is_variadic_input is False
-    assert param_kwds.is_variadic_input is False
+    assert param_input.is_var_input is False
+    assert param_kwds.is_var_input is False
 
 
 def test_is_keyword_param(param_input, param_kwds):

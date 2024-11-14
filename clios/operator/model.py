@@ -41,13 +41,9 @@ class Parameter:
         if not self.is_input:
             return
         assert self.kind not in (
-            ParameterKind.VAR_POSITIONAL,
             ParameterKind.VAR_KEYWORD,
-        ), f"Input parameter `{self.name}` cannot be of `VARIADIC` kind"
-
-        assert (
-            self.kind != ParameterKind.KEYWORD_ONLY
-        ), f"Input parameter `{self.name}` cannot be keyword-only argument"
+            ParameterKind.KEYWORD_ONLY,
+        ), f"Input parameter `{self.name}` cannot be keyword argument"
 
         assert (
             self.default is None
@@ -56,21 +52,9 @@ class Parameter:
     def initialize_type_adapter(self):
         annotation = self.annotation
         if self.param_type.strict:
-            if self.is_variadic_input:
-                type_ = get_args(self.type_)[0]
-                metadata = get_args(annotation)[1:]
-                annotation = Annotated[
-                    list[Annotated[type_, Strict()]], *metadata, Strict()
-                ]
-            else:
-                annotation = Annotated[annotation, Strict()]
+            annotation = Annotated[annotation, Strict()]
 
-        if self.kind == ParameterKind.VAR_POSITIONAL:
-            self._type_adapter: TypeAdapter[Any] = TypeAdapter(list[annotation])
-        elif self.kind == ParameterKind.VAR_KEYWORD:
-            self._type_adapter: TypeAdapter[Any] = TypeAdapter(dict[str, annotation])
-        else:
-            self._type_adapter: TypeAdapter[Any] = TypeAdapter(annotation)
+        self._type_adapter: TypeAdapter[Any] = TypeAdapter(annotation)
 
     def validate(self, value: Any):
         return self._type_adapter.validate_python(value)
@@ -90,8 +74,16 @@ class Parameter:
         return self.annotation
 
     @property
-    def is_variadic_input(self):
-        return self.is_input and get_origin(self.type_) is list
+    def is_var_keyword(self):
+        return self.kind == ParameterKind.VAR_KEYWORD
+
+    @property
+    def is_var_input(self):
+        return self.is_input and self.kind == ParameterKind.VAR_POSITIONAL
+
+    @property
+    def is_var_param(self):
+        return self.is_param and self.kind == ParameterKind.VAR_POSITIONAL
 
     @property
     def is_keyword_param(self):
@@ -164,7 +156,7 @@ class OperatorFn:
     @cached_property
     def var_args(self) -> Parameter | None:
         for param in self.parameters:
-            if param.kind == ParameterKind.VAR_POSITIONAL:
+            if param.is_var_param:
                 return param
         return None
 
@@ -176,7 +168,7 @@ class OperatorFn:
     @cached_property
     def var_kwds(self) -> Parameter | None:
         for param in self.parameters:
-            if param.kind == ParameterKind.VAR_KEYWORD:
+            if param.is_var_keyword:
                 return param
         return None
 
@@ -185,14 +177,14 @@ class OperatorFn:
         params = [
             param
             for param in self.parameters
-            if param.is_input and not param.is_variadic_input
+            if param.is_input and not param.is_var_input
         ]
         return tuple(params)
 
     @cached_property
     def var_input(self) -> Parameter | None:
         for param in self.parameters:
-            if param.is_variadic_input:
+            if param.is_var_input:
                 return param
         return None
 
