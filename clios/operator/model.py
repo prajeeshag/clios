@@ -4,11 +4,17 @@ from functools import cached_property
 from inspect import Parameter as InspectParameter
 from typing import Annotated, Any, Callable, get_args, get_origin
 
-from pydantic import Strict, TypeAdapter
+from pydantic import BeforeValidator, Strict, TypeAdapter
 from pydantic.dataclasses import dataclass
 from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
 
 from clios.operator.params import Input, Output, Param, ParamTypes
+
+
+def _get_type(annotation: Any):
+    if get_origin(annotation) is Annotated:
+        return get_args(annotation)[0]
+    return annotation
 
 
 class ParameterKind(Enum):
@@ -34,10 +40,11 @@ class Parameter:
     default: Any = None
 
     def __post_init__(self):
-        self.validate_input_param()
-        self.initialize_type_adapter()
+        self._validate_input_param()
+        self._init_build_phase_validator()
+        self._init_execute_phase_validator()
 
-    def validate_input_param(self):
+    def _validate_input_param(self):
         if not self.is_input:
             return
         assert self.kind not in (
@@ -49,15 +56,39 @@ class Parameter:
             self.default is None
         ), f"Input parameter `{self.name}` cannot have a default value"
 
-    def initialize_type_adapter(self):
-        annotation = self.annotation
-        if self.param_type.strict:
+    def _init_build_phase_validator(self):
+        self._build_phase_validator: TypeAdapter[Any] = self._init_validator(
+            self.param_type.build_phase_validators, "build"
+        )
+
+    def _init_execute_phase_validator(self):
+        self._execute_phase_validator: TypeAdapter[Any] = self._init_validator(
+            self.param_type.execute_phase_validators, "execute"
+        )
+
+    def _init_validator(
+        self,
+        phase_validators: tuple[Callable[[Any], Any], ...],
+        phase: str,
+    ) -> TypeAdapter[Any]:
+        validators = [BeforeValidator(validator) for validator in phase_validators]
+        annotation = Any
+        if self.param_type.core_validation_phase == phase:
+            annotation = self.annotation
+
+        if validators:
+            annotation = Annotated[annotation, *validators]
+
+        if self.param_type.strict and _get_type(annotation) is not Any:
             annotation = Annotated[annotation, Strict()]
 
-        self._type_adapter: TypeAdapter[Any] = TypeAdapter(annotation)
+        return TypeAdapter(annotation)
 
-    def validate(self, value: Any):
-        return self._type_adapter.validate_python(value)
+    def validate_build(self, value: Any) -> Any:
+        return self._build_phase_validator.validate_python(value)
+
+    def validate_execute(self, value: Any) -> Any:
+        return self._execute_phase_validator.validate_python(value)
 
     @property
     def is_input(self):
@@ -100,6 +131,10 @@ class Parameter:
     @property
     def is_positional(self):
         return self.kind == ParameterKind.POSITIONAL_ONLY
+
+    @property
+    def is_var_positional(self):
+        return self.kind == ParameterKind.VAR_POSITIONAL
 
     @property
     def required(self):
@@ -183,6 +218,16 @@ class OperatorFn:
         return tuple(params)
 
     @cached_property
+    def num_inputs(self) -> int:
+        if self.var_input is not None:
+            return -1
+        return len(self.inputs)
+
+    @cached_property
+    def input_present(self) -> int:
+        return not self.num_inputs == 0
+
+    @cached_property
     def var_input(self) -> Parameter | None:
         for param in self.parameters:
             if param.is_var_input:
@@ -211,6 +256,25 @@ class OperatorFn:
             yield param
         while self.var_args is not None:
             yield self.var_args
+
+    def iter_inputs(self):
+        for param in self.inputs:
+            yield param
+        while self.var_input is not None:
+            yield self.var_input
+
+    def iter_positional_params(self):
+        var_param = None
+        for param in self.parameters:
+            if param.is_var_positional:
+                var_param = param
+                break
+            if param.is_keyword or param.is_var_keyword:
+                break
+            yield param
+
+        while var_param is not None:
+            yield var_param
 
     def get_kwd(self, key: str) -> Parameter:
         if key in self.kwds:

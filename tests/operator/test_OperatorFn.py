@@ -15,12 +15,6 @@ def parameters():
             annotation=int,
         ),
         Parameter(
-            name="var_input",
-            kind=ParameterKind.VAR_POSITIONAL,
-            param_type=Input(strict=True),
-            annotation=int,
-        ),
-        Parameter(
             name="positional_required",
             kind=ParameterKind.POSITIONAL_ONLY,
             param_type=Param(strict=False),
@@ -32,6 +26,12 @@ def parameters():
             param_type=Param(strict=False),
             annotation=str,
             default="default",
+        ),
+        Parameter(
+            name="var_input",
+            kind=ParameterKind.VAR_POSITIONAL,
+            param_type=Input(strict=True),
+            annotation=int,
         ),
         Parameter(
             name="var_positional",
@@ -198,3 +198,22 @@ def test_get_kwds_finite(operator_fn_novar):
     assert operator_fn.get_kwd("kwd_optional").name == "kwd_optional"
     with pytest.raises(KeyError):
         operator_fn.get_kwd("not_a_kwarg")
+
+
+def test_iter_positional_params(operator_fn):
+    iter_args = operator_fn.iter_positional_params()
+    assert next(iter_args).name == "input"
+    assert next(iter_args).name == "positional_required"
+    assert next(iter_args).name == "positional_optional"
+    assert next(iter_args).name == "var_input"
+    assert next(iter_args).name == "var_input"
+    assert next(iter_args).name == "var_input"
+
+
+def test_iter_positional_params_finite(operator_fn_novar):
+    operator_fn = operator_fn_novar
+    iter_args = operator_fn.iter_positional_params()
+    assert next(iter_args).name == "positional_required"
+    assert next(iter_args).name == "positional_optional"
+    with pytest.raises(StopIteration):
+        next(iter_args).name

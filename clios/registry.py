@@ -1,6 +1,6 @@
 from typing import Hashable
 
-from ..operator import Generator, Operator, Reader, Writer
+from .operator.model import OperatorFn
 
 
 class KeyExistsError(Exception):
@@ -9,7 +9,7 @@ class KeyExistsError(Exception):
         self.key = key
 
 
-class Registry[K, O]:
+class _Registry[K, O]:
     def __init__(self) -> None:
         self._db: dict[K, O] = {}
 
@@ -25,13 +25,5 @@ class Registry[K, O]:
         return key in self._db
 
 
-class OperatorRegistry(Registry[str, Operator | Generator]):
-    pass
-
-
-class WriterRegistry(Registry[type, Writer]):
-    pass
-
-
-class ReaderRegistry(Registry[type, Reader]):
+class OperatorRegistry(_Registry[str, OperatorFn]):
     pass
