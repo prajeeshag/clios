@@ -1,11 +1,15 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
+from pydantic import PositiveInt
 from pydantic.dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class _ParamBase:
     strict: bool = False
+    build_phase_validators: tuple[Callable[[Any], Any], ...] = ()
+    execute_phase_validators: tuple[Callable[[Any], Any], ...] = ()
+    core_validation_phase: Literal["build", "execute"] = "build"
 
 
 @dataclass(frozen=True)
@@ -15,8 +19,7 @@ class Param(_ParamBase):
 
 @dataclass(frozen=True)
 class Input(_ParamBase):
-    strict: bool = True
-    parser: Callable[[str], Any] | None = str
+    pass
 
 
 ParamTypes = Param | Input
@@ -24,4 +27,5 @@ ParamTypes = Param | Input
 
 @dataclass(frozen=True)
 class Output:
-    file_saver: Callable[[Any, str], None] | None = None
+    file_saver: Callable[[Any, *tuple[str, ...]], None] | None = None
+    num_outputs: PositiveInt = 1

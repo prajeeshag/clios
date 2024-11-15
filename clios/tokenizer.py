@@ -16,6 +16,9 @@ class Token(ABC):
     def match(cls, string: str) -> bool:
         raise NotImplementedError
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class KWd(NamedTuple):
     key: str

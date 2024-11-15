@@ -1,6 +1,7 @@
 import pytest
 
-from clios.registry import KeyExistsError, Registry
+from clios.registry import KeyExistsError
+from clios.registry import _Registry as Registry  # type: ignore
 
 
 def test_set_get():
