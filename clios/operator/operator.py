@@ -21,8 +21,8 @@ class _OpBase:
         self.verify_keywords()
 
     def verify_keywords(self):
-        required_kwds_keys = self.operator_fn.required_kwds_keys
-        kwds_keys = self.operator_fn.kwds_keys
+        required_kwds_keys = self.operator_fn.required_kwds.keys()
+        kwds_keys = self.operator_fn.kwds.keys()
         for key in required_kwds_keys:
             if key not in self.kwds:
                 raise ArgumentError(f"Missing required keyword argument: {key}")
@@ -44,6 +44,21 @@ class _OpBase:
             raise ArgumentError(
                 f"Expected at most {len(self.operator_fn.args)} arguments, got {len(self.args)}"
             )
+
+    def validate_arguments(self) -> tuple[Any, ...]:
+        arg_values: list[Any] = []
+        iter_args = self.operator_fn.iter_args()
+        for val in self.args:
+            param = next(iter_args)
+            arg_values.append(param.validate(val))
+        return tuple(arg_values)
+
+    def validate_keywords(self) -> dict[str, Any]:
+        arg_values: dict[str, Any] = {}
+        for key, val in self.kwds.items():
+            param = self.operator_fn.get_kwd(key)
+            arg_values[key] = param.validate(val)
+        return arg_values
 
 
 @dataclass(frozen=True)

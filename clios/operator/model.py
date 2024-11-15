@@ -161,9 +161,10 @@ class OperatorFn:
         return None
 
     @cached_property
-    def kwds(self) -> tuple[Parameter, ...]:
-        params = [param for param in self.parameters if param.is_keyword_param]
-        return tuple(params)
+    def kwds(self) -> dict[str, Parameter]:
+        return {
+            param.name: param for param in self.parameters if param.is_keyword_param
+        }
 
     @cached_property
     def var_kwds(self) -> Parameter | None:
@@ -198,18 +199,22 @@ class OperatorFn:
         return tuple(params)
 
     @cached_property
-    def required_kwds(self) -> tuple[Parameter, ...]:
-        params = [
-            param
+    def required_kwds(self) -> dict[str, Parameter]:
+        return {
+            param.name: param
             for param in self.parameters
             if param.is_keyword_param and param.required
-        ]
-        return tuple(params)
+        }
 
-    @cached_property
-    def required_kwds_keys(self) -> tuple[str, ...]:
-        return tuple(param.name for param in self.required_kwds)
+    def iter_args(self):
+        for param in self.args:
+            yield param
+        while self.var_args is not None:
+            yield self.var_args
 
-    @cached_property
-    def kwds_keys(self) -> tuple[str, ...]:
-        return tuple(param.name for param in self.kwds)
+    def get_kwd(self, key: str) -> Parameter:
+        if key in self.kwds:
+            return self.kwds[key]
+        if self.var_kwds is not None:
+            return self.var_kwds
+        raise KeyError(f"Unexpected keyword argument: {key}")
