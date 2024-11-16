@@ -5,9 +5,8 @@ from typing import Annotated, Any, Callable, ForwardRef, Generic, get_args, get_
 from pydantic import PydanticSchemaGenerationError, ValidationError
 from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
 
-from clios.operator.params import Input, Output, Param, ParamTypes
-
 from .model import OperatorFn, Parameter, ParameterKind, ReturnType
+from .params import Input, Output, Param, ParamTypes
 
 _builtin_generic_types = [  # type: ignore
     list,
@@ -61,7 +60,6 @@ def get_parameter(param: IParameter) -> Parameter:
         if get_origin(param.annotation) is Annotated
         else param.annotation
     )
-    assert type_ is not Any, f"Parameter `{param.name}` cannot be of type `Any`"
 
     try:
         is_generic = _is_generic_type(type_)

@@ -8,7 +8,7 @@ from pydantic import BeforeValidator, Strict, TypeAdapter
 from pydantic.dataclasses import dataclass
 from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
 
-from clios.operator.params import Input, Output, Param, ParamTypes
+from .params import Input, Output, Param, ParamTypes
 
 
 def _get_type(annotation: Any):

@@ -1,3 +1,4 @@
+# type: ignore
 parameters = [
     ["-add 1 2".split(), "3"],
     ["-sub 1 2".split(), "-1"],
