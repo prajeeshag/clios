@@ -3,6 +3,7 @@ import pytest
 
 from clios.operator.model import Parameter
 from clios.operator.operator import LeafOperator
+from clios.tokenizer import OperatorToken as Ot
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def param_mock(mocker):
 
 @pytest.fixture
 def op_base(mocker, operator_fn):
-    return LeafOperator(operator_fn=operator_fn)
+    return LeafOperator(operator_fn=operator_fn, token=Ot("test"))
 
 
 def test__with_no_args_or_inputs(op_base):

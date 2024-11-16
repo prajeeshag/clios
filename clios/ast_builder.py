@@ -29,6 +29,8 @@ class ErrorType(str, Enum):
     UNEXPECTED_KWD = "Unexpected keyword argument"
     CHAIN_TYPE_ERROR = "Cannot chain operator"
     ARG_VALIDATION_ERROR = "Argument validation error"
+    INPUT_VALIDATION_ERROR = "Input validation error"
+    SYNTAX_NOT_SUPPORTED = "Syntax not supported"
 
 
 class ParserErrorCtx(TypedDict, total=False):
@@ -37,7 +39,6 @@ class ParserErrorCtx(TypedDict, total=False):
     expected_num_args: int
     arg_key: str
     arg_index: int
-    validation_errors: str
     validation_error: ValidationError
 
 
@@ -63,7 +64,11 @@ class ASTBuilder:
     ) -> None:
         self._operators = operators
 
-    def parse_tokens(self, tokens: tuple[Token, ...]) -> RootOperator | _Empty:
+    def parse_tokens(
+        self,
+        tokens: tuple[Token, ...],
+        return_value: bool = False,
+    ) -> RootOperator | _Empty:
         index = 0
         token_list = list(tokens)
         num_tokens = len(token_list)
@@ -84,7 +89,7 @@ class ASTBuilder:
 
         num_outputs = 0
         file_saver = None
-        if opfn.return_type.type_ is not None:
+        if opfn.return_type.type_ is not None and not return_value:
             file_saver = opfn.return_type.info.file_saver
             if file_saver is None:
                 raise ParserError(
@@ -119,20 +124,21 @@ class ASTBuilder:
             input=operator,
             file_saver=file_saver,
             args=tuple(output_file_paths),
+            return_value=return_value,
         )
 
     def _parse_tokens(
         self,
         token_list: list[Token],
-        opTkn: OperatorToken,
+        op_token: OperatorToken,
         opfn: OperatorFn,
         index: int,
     ) -> LeafOperator:
-        validate_args = _validate_operator_arguments(opfn, opTkn.args, index)
-        validate_kwds = _validate_operator_keywords(opfn, opTkn.kwds, index)
+        validate_args = _validate_operator_arguments(opfn, op_token.args, index)
+        validate_kwds = _validate_operator_keywords(opfn, op_token.kwds, index)
 
         if not opfn.input_present:
-            return LeafOperator(opfn, args=validate_args, kwds=validate_kwds)
+            return LeafOperator(op_token, opfn, args=validate_args, kwds=validate_kwds)
 
         child_operators: list[BaseOperator] = []
 
@@ -160,12 +166,24 @@ class ASTBuilder:
                 child_operators.append(child_operator)
                 child_token_index += num_tokens_before - len(token_list)
             elif isinstance(tkn, StringToken):
-                value = input_param.validate_build(tkn.value)
+                try:
+                    value = input_param.validate_build(tkn.value)
+                except ValidationError as e:
+                    raise ParserError(
+                        ErrorType.INPUT_VALIDATION_ERROR,
+                        ctx={
+                            "token_index": child_token_index,
+                            "validation_error": e,
+                        },
+                    )
                 child_operators.append(
-                    SimpleOperator(input_param.validate_execute, value)
+                    SimpleOperator(tkn, input_param.validate_execute, value)
                 )
             else:
-                raise NotImplementedError
+                raise ParserError(
+                    ErrorType.SYNTAX_NOT_SUPPORTED,
+                    ctx={"token_index": child_token_index},
+                )
 
         if len(child_operators) < len(opfn.inputs):
             raise ParserError(ErrorType.MISSING_INPUTS, ctx={"token_index": index})
@@ -174,6 +192,7 @@ class ASTBuilder:
             raise ParserError(ErrorType.TOO_FEW_INPUTS, ctx={"token_index": index})
 
         return Operator(
+            op_token,
             operator_fn=opfn,
             inputs=tuple(child_operators),
             args=validate_args,
@@ -232,7 +251,6 @@ def _validate_operator_keywords(
     arg_values: dict[str, Any] = {}
     for key, val in kwds_dict.items():
         param = op_fn.get_kwd(key)
-        print(param, key, val)
         try:
             arg_values[key] = param.validate_build(val)
         except ValidationError as e:
@@ -240,7 +258,6 @@ def _validate_operator_keywords(
                 ErrorType.ARG_VALIDATION_ERROR,
                 ctx={"token_index": index, "arg_key": key, "validation_error": e},
             )
-        print(arg_values)
     return arg_values
 
 

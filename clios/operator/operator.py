@@ -1,15 +1,46 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from enum import Enum
+from typing import Any, Callable, TypedDict
 
+from pydantic import ValidationError
+
+from ..tokenizer import Token
 from .model import OperatorFn
+
+
+class ErrorType(str, Enum):
+    ARG_VALIDATION_ERROR = "Argument validation error"
+    INPUT_VALIDATION_ERROR = "Input validation error"
+
+
+class OperatorErrorCtx(TypedDict, total=False):
+    token: Token
+    arg_key: str
+    arg_index: int
+    validation_error: ValidationError
+
+
+class OperatorError(Exception):
+    def __init__(
+        self,
+        error_type: ErrorType,
+        ctx: OperatorErrorCtx = {},
+    ) -> None:
+        self.error_type = error_type
+        self.ctx = ctx
+        super().__init__(error_type.value)
 
 
 @dataclass(frozen=True)
 class BaseOperator(ABC):
+    token: Token
+
     @abstractmethod
-    def execute(self) -> Any:
-        pass
+    def execute(self) -> Any: ...
+
+    @abstractmethod
+    def draw(self) -> str: ...
 
 
 @dataclass(frozen=True)
@@ -19,6 +50,9 @@ class SimpleOperator(BaseOperator):
 
     def execute(self) -> Any:
         return self.fn(self.input)
+
+    def draw(self) -> str:
+        return f"{self.token.value}"
 
 
 @dataclass(frozen=True)
@@ -30,16 +64,28 @@ class LeafOperator(BaseOperator):
     def _validate_arguments(self) -> list[Any]:
         arg_values: list[Any] = []
         iter_args = self.operator_fn.iter_args()
-        for val in self.args:
+        for i, val in enumerate(self.args):
             param = next(iter_args)
-            arg_values.append(param.validate_execute(val))
+            try:
+                arg_values.append(param.validate_execute(val))
+            except ValidationError as e:
+                raise OperatorError(
+                    ErrorType.ARG_VALIDATION_ERROR,
+                    ctx={"token": self.token, "arg_index": i, "validation_error": e},
+                )
         return arg_values
 
     def _validate_keywords(self) -> dict[str, Any]:
         arg_values: dict[str, Any] = {}
         for key, val in self.kwds.items():
             param = self.operator_fn.get_kwd(key)
-            arg_values[key] = param.validate_execute(val)
+            try:
+                arg_values[key] = param.validate_execute(val)
+            except ValidationError as e:
+                raise OperatorError(
+                    ErrorType.ARG_VALIDATION_ERROR,
+                    ctx={"token": self.token, "arg_key": key, "validation_error": e},
+                )
         return arg_values
 
     def _compose_arg_values(self, args: list[Any], inputs: list[Any]) -> list[Any]:
@@ -62,6 +108,9 @@ class LeafOperator(BaseOperator):
         value = self.operator_fn.callback(*arg_values, **kwds_values)
         return self.operator_fn.return_type.validate(value)
 
+    def draw(self) -> str:
+        return f"{self.token.value}"
+
 
 @dataclass(frozen=True)
 class Operator(LeafOperator):
@@ -72,7 +121,13 @@ class Operator(LeafOperator):
         iter_inputs = self.operator_fn.iter_inputs()
         for input_ in self.inputs:
             input_param = next(iter_inputs)
-            value = input_param.validate_execute(input_.execute())
+            try:
+                value = input_param.validate_execute(input_.execute())
+            except ValidationError as e:
+                raise OperatorError(
+                    ErrorType.INPUT_VALIDATION_ERROR,
+                    ctx={"token": input_.token, "validation_error": e},
+                )
             input_values.append(value)
         return input_values
 
@@ -84,16 +139,31 @@ class Operator(LeafOperator):
         value = self.operator_fn.callback(*positional_args, **kwds_values)
         return self.operator_fn.return_type.validate(value)
 
+    def draw(self) -> str:
+        res = f"{self.token.value} [ "
+        for input_ in self.inputs:
+            res += f"{input_.draw()} "
+        res += "]"
+        return res
+
 
 @dataclass(frozen=True)
 class RootOperator:
     input: BaseOperator
     file_saver: Callable[[Any, str], None] | None = None
     args: tuple[str, ...] = ()
+    return_value: bool = False
 
-    def execute(self):
+    def execute(self) -> Any:
         value = self.input.execute()
-        if value is None:
-            return
+        if self.return_value or value is None:
+            return value
         assert self.file_saver is not None
         self.file_saver(value, *self.args)
+
+    def draw(self) -> str:
+        if self.file_saver is None:
+            return self.input.draw()
+        res = ",".join(self.args)
+        res += f" [ {self.input.draw()} ]"
+        return res
