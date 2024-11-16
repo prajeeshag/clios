@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import NamedTuple, TypeGuard
 
-from clios.exceptions import TokenError
+from .exceptions import TokenError
 
 
 @dataclass(frozen=True)

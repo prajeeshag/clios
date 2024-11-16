@@ -34,17 +34,20 @@ class ASTBuilder:
         except KeyError:
             raise OperatorNotFound(op_token.name)
 
-        file_saver = opfn.return_type.info.file_saver
-        if file_saver is None and opfn.return_type.type_ is not None:
-            raise TokenError(
-                str(op_token),
-                msg="""
-                This operator cannot be the root operator!
-                Use an operator that can save the output to a file.
-                if you just want to print the output, use the 'print' operator as the root operator.
-                """,
-            )
-        num_outputs = opfn.return_type.info.num_outputs
+        num_outputs = 0
+        file_saver = None
+        if opfn.return_type.type_ is not None:
+            file_saver = opfn.return_type.info.file_saver
+            if file_saver is None:
+                raise TokenError(
+                    str(op_token),
+                    msg="""
+                    This operator cannot be the root operator!
+                    Use an operator that can save the output to a file.
+                    if you just want to print the output, use the 'print' operator as the root operator.
+                    """,
+                )
+            num_outputs = opfn.return_type.info.num_outputs
 
         output_file_paths: list[str] = []
         for _ in range(num_outputs):
@@ -87,11 +90,12 @@ class ASTBuilder:
 
         for input_param in opfn.iter_inputs():
             if len(token_list) == 0:
-                raise TokenError(str(opTkn), msg="Missing inputs")
+                break
             tkn = token_list.pop()
             if isinstance(tkn, OperatorToken):
                 child_op = self._get_operator(tkn)
-                if input_param.type_ != child_op.return_type.type_:
+                in_type = input_param.type_
+                if in_type is not Any and in_type != child_op.return_type.type_:
                     raise ChainTypeError(
                         tkn.name,
                         opTkn.name,
@@ -107,6 +111,12 @@ class ASTBuilder:
                 )
             else:
                 raise NotImplementedError
+
+        if len(child_operators) < len(opfn.inputs):
+            raise TokenError(str(opTkn), msg="Missing inputs")
+
+        if opfn.var_input is not None and (len(child_operators) - len(opfn.inputs)) < 1:
+            raise TokenError(str(opTkn), msg="Too few inputs")
 
         return Operator(
             operator_fn=opfn,
