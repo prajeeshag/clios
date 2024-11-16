@@ -1,5 +1,4 @@
 # [start]
-
 from clios import Clios
 
 app = Clios()
@@ -19,16 +18,6 @@ def sub(input1: int, input2: int) -> int:
 @app.operator(name="sum")
 def sum_(*input: int) -> int:
     return sum(input)
-
-
-@app.operator()
-def fibo(n: int) -> tuple[int, ...]:
-    a, b = 0, 1
-    fib: list[int] = []
-    for _ in range(n):
-        fib.append(a)
-        a, b = b, a + b
-    return tuple(fib)
 
 
 # [main_start]
