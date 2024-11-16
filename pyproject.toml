@@ -23,7 +23,7 @@ include = ["clios"]
 exclude = ["tests", "examples"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "examples"]
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
