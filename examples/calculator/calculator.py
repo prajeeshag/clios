@@ -1,32 +1,23 @@
 # [start]
-from typing import Annotated
 
-from clios import Clios, Input
+from clios import Clios
 
 app = Clios()
 # [app_created]
 
-intInput = Annotated[int, Input()]
-
 
 @app.operator()
-def add(
-    input1: intInput,
-    input2: intInput,
-) -> int:
+def add(input1: int, input2: int) -> int:
     return input1 + input2
 
 
 @app.operator()
-def sub(
-    input1: intInput,
-    input2: intInput,
-) -> int:
+def sub(input1: int, input2: int) -> int:
     return input1 - input2
 
 
 @app.operator(name="sum")
-def sum_(*input: intInput) -> int:
+def sum_(*input: int) -> int:
     return sum(input)
 
 
