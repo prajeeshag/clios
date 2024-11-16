@@ -22,16 +22,8 @@ def ff01(input0) -> int:
     """Missing type annotation for parameter `input0`"""
 
 
-def ff15(input1: Any) -> int:
-    """Parameter `input1` cannot be of type `Any`"""
-
-
 def ff19(input2: [Any, Input()]) -> int:
     """Unsupported type annotation for parameter `input2`"""
-
-
-def ff18(input2: Annotated[Any, Input()]) -> int:
-    """Parameter `input2` cannot be of type `Any`"""
 
 
 def ff17(**kwds: Annotated[int, Input()]) -> int:
