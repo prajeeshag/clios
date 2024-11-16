@@ -1,6 +1,15 @@
 import inspect
 from inspect import Parameter as IParameter
-from typing import Annotated, Any, Callable, ForwardRef, Generic, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ForwardRef,
+    Generic,
+    Literal,
+    get_args,
+    get_origin,
+)
 
 from pydantic import PydanticSchemaGenerationError, ValidationError
 from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
@@ -21,12 +30,18 @@ def _is_generic_type(t: Any) -> bool:
     return issubclass(t, Generic) or t in _builtin_generic_types
 
 
-def get_operator_fn(func: Callable[..., Any]) -> OperatorFn:
+Implicit = Literal["input", "param"]
+
+
+def get_operator_fn(
+    func: Callable[..., Any],
+    implicit: Implicit = "input",
+) -> OperatorFn:
     signature = get_typed_signature(func)
     Parameters: list[Parameter] = []
 
     for param in signature.parameters.values():
-        parameter = get_parameter(param)
+        parameter = get_parameter(param, implicit)
         Parameters.append(parameter)
 
     return_annotation = signature.return_annotation
@@ -51,7 +66,7 @@ def get_output_info(return_annotation: Any) -> Output:
     return Output()
 
 
-def get_parameter(param: IParameter) -> Parameter:
+def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
     assert (
         param.annotation is not inspect.Signature.empty
     ), f"Missing type annotation for parameter `{param.name}`"
@@ -76,6 +91,13 @@ def get_parameter(param: IParameter) -> Parameter:
         default = None
 
     param_type = get_parameter_type_annotation(param)
+    if param_type is None:
+        if implicit == "input":
+            param_type = Input()
+        elif implicit == "param":
+            param_type = Param()
+        else:
+            raise AssertionError(f"Invalid implicit option `{implicit}`")
 
     try:
         parameter = Parameter(
@@ -109,13 +131,13 @@ def get_parameter(param: IParameter) -> Parameter:
     return parameter
 
 
-def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes:
+def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes | None:
     if get_origin(param.annotation) is Annotated:
         annotated_args = get_args(param.annotation)
         for arg in reversed(annotated_args):
             if isinstance(arg, (Param, Input)):
                 return arg
-    return Param()
+    return None
 
 
 def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:

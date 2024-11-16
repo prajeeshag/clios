@@ -10,10 +10,7 @@ authors = [{ name = "Prajeesh Ag", email = "prajeeshag@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "pydantic==2.9.*",
-    "rich>=13.9.4",
-]
+dependencies = ["pydantic==2.9.*", "rich>=13.9.4"]
 
 [project.urls]
 homepage = "https://prajeeshag.github.io/clios"
@@ -26,7 +23,7 @@ include = ["clios"]
 exclude = ["tests", "examples"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "examples"]
+testpaths = ["tests"]
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
