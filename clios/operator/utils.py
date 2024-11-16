@@ -11,7 +11,7 @@ from typing import (
     get_origin,
 )
 
-from pydantic import PydanticSchemaGenerationError, ValidationError
+from pydantic import PydanticSchemaGenerationError
 from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
 
 from .model import OperatorFn, Parameter, ParameterKind, ReturnType
@@ -62,7 +62,6 @@ def get_output_info(return_annotation: Any) -> Output:
     for arg in reversed(get_args(return_annotation)[1:]):
         if isinstance(arg, Output):
             return arg
-
     return Output()
 
 
@@ -100,7 +99,7 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
             raise AssertionError(f"Invalid implicit option `{implicit}`")
 
     try:
-        parameter = Parameter(
+        return Parameter(
             name=param.name,
             kind=ParameterKind(param.kind),
             param_type=param_type,
@@ -111,24 +110,6 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
         raise AssertionError(
             f"Unsupported type annotation for parameter `{param.name}`"
         )
-    except ValidationError as e:
-        error = e.errors()[0]
-        if error["type"] == "assertion_error":
-            if "ctx" in error and "error" in error["ctx"]:
-                raise error["ctx"]["error"]
-            else:
-                raise
-        else:
-            raise
-    except ValueError as e:
-        if str(e) == "Variable tuples can only have one type":
-            raise AssertionError(
-                f"Unsupported type annotation for parameter `{param.name}`"
-            )
-        else:
-            raise
-
-    return parameter
 
 
 def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes | None:

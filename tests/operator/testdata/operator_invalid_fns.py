@@ -26,10 +26,6 @@ def ff19(input2: [Any, Input()]) -> int:
     """Unsupported type annotation for parameter `input2`"""
 
 
-def ff17(**kwds: Annotated[int, Input()]) -> int:
-    """Input parameter `kwds` cannot be keyword argument"""
-
-
 def ff21(input1: list) -> int:
     """Missing type argument for generic class in parameter `input1`"""
 
@@ -46,18 +42,24 @@ def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:
     """Unsupported type annotation for parameter `input1`"""
 
 
-def ff08(i: Annotated[int, Input()] = 10) -> int:
-    """Input parameter `i` cannot have a default value"""
-
-
-def ff30(*, i: Annotated[int, Input()]) -> int:
-    """Input parameter `i` cannot be keyword argument"""
-
-
-def ff31(**i: Annotated[int, Input()]) -> int:
-    """Input parameter `i` cannot be keyword argument"""
-
-
 _current_module = sys.modules[__name__]
 ff_fns = list_functions(_current_module, "ff")
 failing = [InputFailing(fn, AssertionError(fn.__doc__)) for fn in ff_fns]
+
+
+def ffp08(i: Annotated[int, Input()] = 10) -> int:
+    """Input parameter `i` cannot have a default value"""
+
+
+def ffp30(*, i: Annotated[int, Input()]) -> int:
+    """Input parameter `i` cannot be keyword argument"""
+
+
+def ffp31(**i: Annotated[int, Input()]) -> int:
+    """Input parameter `i` cannot be keyword argument"""
+
+
+ff_fns = list_functions(_current_module, "ffp")
+failing_parameter_validation = [
+    InputFailing(fn, AssertionError(fn.__doc__)) for fn in ff_fns
+]

@@ -95,7 +95,7 @@ passing += [
 ]
 
 
-def fp07(*params: int) -> int: ...
+def fp07(*params: int) -> Annotated[int, "a"]: ...
 
 
 passing += [
@@ -103,7 +103,7 @@ passing += [
         fp07,
         OpFn(
             (P("params", PK.VAR_POSITIONAL, param, int),),
-            RT(int),
+            RT(Annotated[int, "a"]),
             fp07,
         ),
     )
