@@ -87,7 +87,7 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
 
     default = param.default
     if param.default is inspect.Signature.empty:
-        default = None
+        default = Parameter.empty
 
     param_type = get_parameter_type_annotation(param)
     if param_type is None:
