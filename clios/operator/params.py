@@ -27,5 +27,5 @@ ParamTypes = Param | Input
 
 @dataclass(frozen=True)
 class Output:
-    file_saver: Callable[[Any, *tuple[str, ...]], None] | None = None
+    file_saver: Callable[..., None] | None = None
     num_outputs: PositiveInt = 1

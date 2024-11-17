@@ -5,8 +5,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from .exceptions import CliosError
 from .operator.model import OperatorFn
 from .registry import OperatorRegistry
+
+
+def process_error(error: CliosError) -> None:
+    pass
 
 
 def print_list(operators: OperatorRegistry):
@@ -17,13 +22,16 @@ def print_list(operators: OperatorRegistry):
         data (list[tuple[str, str]]): A list of tuples containing data for the table.
     """
     console = Console()
-    table = Table(show_header=True, header_style="bold blue")
+    table = Table(
+        show_header=True, header_style="bold blue", title="Available Operators"
+    )
     data = [(name, op.short_description) for name, op in operators.items()]
     # Add columns with dynamic width for the second column
-    table.add_column("Operator", no_wrap=True)
-    table.add_column(
-        "Description", width=console.size.width - max(len(row[0]) for row in data) - 5
-    )
+    column1_width = max(len(row[0]) for row in data)
+    column1_width = max(len("Operator"), column1_width)
+    table.add_column("Operator", no_wrap=True, min_width=column1_width, style="bold")
+    # table.add_column("Description", width=console.size.width - column1_width - 10)
+    table.add_column("Description")
     # Add rows
     for col1, col2 in data:
         table.add_row(col1, col2)

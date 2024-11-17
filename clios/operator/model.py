@@ -4,7 +4,7 @@ from functools import cached_property
 from inspect import Parameter as InspectParameter
 from typing import Annotated, Any, Callable, ClassVar, NamedTuple, get_args, get_origin
 
-from docstring_parser import parse as parse_docstring
+from docstring_parser import parse as parse_docstring  # type: ignore
 from pydantic import BeforeValidator, Strict, TypeAdapter
 from pydantic.dataclasses import dataclass
 from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
