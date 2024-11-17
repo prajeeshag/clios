@@ -4,8 +4,8 @@ from typing import Annotated, Any
 import pytest
 from pydantic import BeforeValidator, Strict
 
-from clios.operator.model import Parameter, ParameterKind
-from clios.operator.params import Param
+from clios.operator.operator_fn import Parameter, ParameterKind
+from clios.operator.param_info import Param
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def parameter(mocker):
         return Parameter(
             name="test_param",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=param,
+            info=param,
             annotation=int,
         )
 

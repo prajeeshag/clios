@@ -1,21 +1,13 @@
 import inspect
+import typing as t
 from inspect import Parameter as IParameter
-from typing import (
-    Annotated,
-    Any,
-    Callable,
-    ForwardRef,
-    Generic,
-    Literal,
-    get_args,
-    get_origin,
-)
 
 from pydantic import PydanticSchemaGenerationError
 from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
 
-from .model import OperatorFn, Parameter, ParameterKind, ReturnType
-from .params import Input, Output, Param, ParamTypes
+from .operator_fn import OperatorFn
+from .param_info import Input, Output, Param, ParamTypes
+from .parameter import Parameter, ParameterKind, ReturnType
 
 _builtin_generic_types = [  # type: ignore
     list,
@@ -26,15 +18,15 @@ _builtin_generic_types = [  # type: ignore
 ]
 
 
-def _is_generic_type(t: Any) -> bool:
-    return issubclass(t, Generic) or t in _builtin_generic_types
+def _is_generic_type(t: t.Any) -> bool:
+    return issubclass(t, t.Generic) or t in _builtin_generic_types
 
 
-Implicit = Literal["input", "param"]
+Implicit = t.Literal["input", "param"]
 
 
 def get_operator_fn(
-    func: Callable[..., Any],
+    func: t.Callable[..., t.Any],
     implicit: Implicit = "input",
 ) -> OperatorFn:
     signature = get_typed_signature(func)
@@ -50,16 +42,16 @@ def get_operator_fn(
 
     return OperatorFn(
         parameters=tuple(Parameters),
-        return_type=ReturnType(return_annotation, output_info),
+        output=ReturnType(return_annotation, output_info),
         callback=func,
     )
 
 
-def get_output_info(return_annotation: Any) -> Output:
-    if get_origin(return_annotation) is not Annotated:
+def get_output_info(return_annotation: t.Any) -> Output:
+    if t.get_origin(return_annotation) is not t.Annotated:
         return Output()
 
-    for arg in reversed(get_args(return_annotation)[1:]):
+    for arg in reversed(t.get_args(return_annotation)[1:]):
         if isinstance(arg, Output):
             return arg
     return Output()
@@ -70,8 +62,8 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
         param.annotation is not inspect.Signature.empty
     ), f"Missing type annotation for parameter `{param.name}`"
     type_ = (
-        get_args(param.annotation)[0]
-        if get_origin(param.annotation) is Annotated
+        t.get_args(param.annotation)[0]
+        if t.get_origin(param.annotation) is t.Annotated
         else param.annotation
     )
 
@@ -102,7 +94,7 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
         return Parameter(
             name=param.name,
             kind=ParameterKind(param.kind),
-            param_type=param_type,
+            info=param_type,
             annotation=param.annotation,
             default=default,
         )
@@ -113,15 +105,15 @@ def get_parameter(param: IParameter, implicit: Implicit) -> Parameter:
 
 
 def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes | None:
-    if get_origin(param.annotation) is Annotated:
-        annotated_args = get_args(param.annotation)
+    if t.get_origin(param.annotation) is t.Annotated:
+        annotated_args = t.get_args(param.annotation)
         for arg in reversed(annotated_args):
             if isinstance(arg, (Param, Input)):
                 return arg
     return None
 
 
-def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:
+def get_typed_signature(call: t.Callable[..., t.Any]) -> inspect.Signature:
     signature = inspect.signature(call)
     globalns = getattr(call, "__globals__", {})
     typed_params = [
@@ -146,8 +138,8 @@ def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:
     return typed_signature
 
 
-def get_typed_annotation(annotation: Any, globalns: dict[str, Any]) -> Any:
+def get_typed_annotation(annotation: t.Any, globalns: dict[str, t.Any]) -> t.Any:
     if isinstance(annotation, str):
-        annotation = ForwardRef(annotation)
+        annotation = t.ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return annotation

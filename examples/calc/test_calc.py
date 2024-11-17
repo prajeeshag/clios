@@ -3,8 +3,8 @@
 import pytest
 from parameters import parameters
 
-from clios.ast_builder import ASTBuilder
-from clios.tokenizer import tokenize
+from clios.cli.ast_builder import ASTBuilder
+from clios.cli.tokenizer import tokenize
 from examples.calc.calc import app
 
 

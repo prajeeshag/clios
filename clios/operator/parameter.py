@@ -1,0 +1,231 @@
+# from dataclasses import dataclass
+from enum import Enum
+from inspect import Parameter as InspectParameter
+from typing import Annotated, Any, Callable, ClassVar, NamedTuple, get_args, get_origin
+
+from pydantic import BeforeValidator, Strict, TypeAdapter
+from pydantic.dataclasses import dataclass
+from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
+from typing_extensions import Doc
+
+from .param_info import Input, Output, Param, ParamTypes
+
+
+def _get_type(annotation: Any):
+    if get_origin(annotation) is Annotated:
+        return get_args(annotation)[0]
+    return annotation
+
+
+type_to_str = {
+    int: "int",
+    float: "float",
+    str: "text",
+    bool: "bool",
+}
+
+
+class ParamDoc(NamedTuple):
+    """A named tuple to represent the documentation of a parameter"""
+
+    repr: str
+    type_: str = "text"
+    default: str = ""
+    description: str = ""
+
+
+class ParameterKind(Enum):
+    # POSITIONAL_OR_KEYWORD is as POSITIONAL_ONLY
+    POSITIONAL_ONLY = InspectParameter.POSITIONAL_ONLY
+    VAR_POSITIONAL = InspectParameter.VAR_POSITIONAL
+    KEYWORD_ONLY = InspectParameter.KEYWORD_ONLY
+    VAR_KEYWORD = InspectParameter.VAR_KEYWORD
+
+    @classmethod
+    def _missing_(cls, value: object) -> "ParameterKind":
+        if value == InspectParameter.POSITIONAL_OR_KEYWORD:
+            return cls.POSITIONAL_ONLY
+        return super()._missing_(value)
+
+
+@dataclass(frozen=True)
+class _Empty:
+    def __str__(self) -> str:
+        return ""
+
+
+@dataclass
+class Parameter:
+    """A dataclass to represent a parameter of an operator function"""
+
+    empty: ClassVar[_Empty] = _Empty()
+    name: str
+    kind: ParameterKind
+    info: ParamTypes
+    annotation: Any
+    default: Any = empty
+
+    def __post_init__(self):
+        self._validate_input_param()
+        self._init_build_phase_validator()
+        self._init_execute_phase_validator()
+        self._init_doc()
+
+    def _init_doc(self):
+        self._description = ""
+        if get_origin(self.annotation) is Annotated:
+            for arg in get_args(self.annotation)[::-1]:
+                if isinstance(arg, Doc):
+                    self._description = arg.documentation
+                    break
+        self._type_doc = "text"
+        if _get_type(self.type_) in type_to_str:
+            self._type_doc = type_to_str[_get_type(self.type_)]
+
+        self._default_doc = str(self.default)
+        if self.default == "":
+            self._default_doc = "''"
+
+    def _validate_input_param(self):
+        if not self.is_input:
+            return
+        assert self.kind not in (
+            ParameterKind.VAR_KEYWORD,
+            ParameterKind.KEYWORD_ONLY,
+        ), f"Input parameter `{self.name}` cannot be keyword argument"
+
+        assert (
+            self.default is Parameter.empty
+        ), f"Input parameter `{self.name}` cannot have a default value"
+
+    def _init_build_phase_validator(self):
+        self._build_phase_validator: TypeAdapter[Any] = self._init_validator(
+            self.info.build_phase_validators, "build"
+        )
+
+    def _init_execute_phase_validator(self):
+        self._execute_phase_validator: TypeAdapter[Any] = self._init_validator(
+            self.info.execute_phase_validators, "execute"
+        )
+
+    def _init_validator(
+        self,
+        phase_validators: tuple[Callable[[Any], Any], ...],
+        phase: str,
+    ) -> TypeAdapter[Any]:
+        validators = [BeforeValidator(validator) for validator in phase_validators]
+        annotation = Any
+        if self.info.core_validation_phase == phase:
+            annotation = self.annotation
+
+        if validators:
+            annotation = Annotated[annotation, *validators]
+
+        if self.info.strict and _get_type(annotation) is not Any:
+            annotation = Annotated[annotation, Strict()]
+
+        return TypeAdapter(annotation)
+
+    def validate_build(self, value: Any) -> Any:
+        return self._build_phase_validator.validate_python(value)
+
+    def validate_execute(self, value: Any) -> Any:
+        return self._execute_phase_validator.validate_python(value)
+
+    def get_doc(self) -> ParamDoc:
+        return ParamDoc(
+            repr=self.name,
+            type_=self._type_doc,
+            default=self._default_doc,
+            description=self._description,
+        )
+
+    @property
+    def is_input(self):
+        """Check if the parameter is an input"""
+        return isinstance(self.info, Input)
+
+    @property
+    def is_param(self):
+        """Check if the parameter is a parameter"""
+        return isinstance(self.info, Param)
+
+    @property
+    def type_(self):
+        """Get the data type of the parameter"""
+        if get_origin(self.annotation) is Annotated:
+            return get_args(self.annotation)[0]
+        return self.annotation
+
+    @property
+    def is_var_keyword(self):
+        """Check if the parameter is a variable keyword"""
+        return self.kind == ParameterKind.VAR_KEYWORD
+
+    @property
+    def is_var_input(self):
+        """Check if the parameter is a variable input"""
+        return self.is_input and self.kind == ParameterKind.VAR_POSITIONAL
+
+    @property
+    def is_var_param(self):
+        """Check if the parameter is a variable parameter"""
+        return self.is_param and self.kind == ParameterKind.VAR_POSITIONAL
+
+    @property
+    def is_keyword_param(self):
+        """Check if the parameter is a keyword parameter"""
+        return self.kind == ParameterKind.KEYWORD_ONLY and not self.is_input
+
+    @property
+    def is_positional_param(self):
+        """Check if the parameter is a positional parameter"""
+        return self.kind == ParameterKind.POSITIONAL_ONLY and not self.is_input
+
+    @property
+    def is_var_positional(self):
+        """Check if the parameter is a variable positional"""
+        return self.kind == ParameterKind.VAR_POSITIONAL
+
+    @property
+    def is_required(self):
+        """Check if the parameter is required"""
+        return self.default is Parameter.empty
+
+
+@dataclass
+class ReturnType:
+    """A dataclass to represent the return type of an operator function"""
+
+    annotation: Any = None
+    info: Output = Output()
+
+    def __post_init__(self):
+        if self.type_ is None:
+            self._type_adapter: TypeAdapter[Any] = TypeAdapter(None)
+            return
+
+        prohibited_validators = (PlainValidator, WrapValidator, AfterValidator)
+        annotation = self.annotation
+        if get_origin(self.annotation) is Annotated:
+            metadata = [
+                arg
+                for arg in get_args(self.annotation)[1:]
+                if not isinstance(arg, prohibited_validators)
+            ]
+            type_ = get_args(self.annotation)[0]
+            if metadata:
+                annotation = Annotated[type_, *metadata]
+            else:
+                annotation = type_
+        annotation = Annotated[annotation, Strict()]
+        self._type_adapter: TypeAdapter[Any] = TypeAdapter(annotation)
+
+    def validate(self, value: Any):
+        return self._type_adapter.validate_python(value)
+
+    @property
+    def type_(self):
+        if get_origin(self.annotation) is Annotated:
+            return get_args(self.annotation)[0]
+        return self.annotation

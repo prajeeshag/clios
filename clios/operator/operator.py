@@ -1,35 +1,13 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Callable, TypedDict
+from typing import Any, Callable
 
 from pydantic import ValidationError
 
-from ..tokenizer import Token
-from .model import OperatorFn
+from clios.exceptions import OperatorError
 
-
-class ErrorType(str, Enum):
-    ARG_VALIDATION_ERROR = "Argument validation error"
-    INPUT_VALIDATION_ERROR = "Input validation error"
-
-
-class OperatorErrorCtx(TypedDict, total=False):
-    token: Token
-    arg_key: str
-    arg_index: int
-    validation_error: ValidationError
-
-
-class OperatorError(Exception):
-    def __init__(
-        self,
-        error_type: ErrorType,
-        ctx: OperatorErrorCtx = {},
-    ) -> None:
-        self.error_type = error_type
-        self.ctx = ctx
-        super().__init__(error_type.value)
+from ..cli.tokenizer import Token
+from .operator_fn import OperatorFn
 
 
 @dataclass(frozen=True)
@@ -70,7 +48,7 @@ class LeafOperator(BaseOperator):
                 arg_values.append(param.validate_execute(val))
             except ValidationError as e:
                 raise OperatorError(
-                    ErrorType.ARG_VALIDATION_ERROR,
+                    "Data validation error!",
                     ctx={"token": self.token, "arg_index": i, "validation_error": e},
                 )
         return arg_values
@@ -83,13 +61,13 @@ class LeafOperator(BaseOperator):
                 arg_values[key] = param.validate_execute(val)
             except ValidationError as e:
                 raise OperatorError(
-                    ErrorType.ARG_VALIDATION_ERROR,
+                    "Data validation error!",
                     ctx={"token": self.token, "arg_key": key, "validation_error": e},
                 )
         return arg_values
 
     def _compose_arg_values(self, args: list[Any], inputs: list[Any]) -> list[Any]:
-        iter_params = self.operator_fn.iter_positional_params()
+        iter_params = self.operator_fn.iter_positional()
         args_rev = list(args[::-1])
         inputs_rev = list(inputs[::-1])
         param_values: list[Any] = []
@@ -106,7 +84,7 @@ class LeafOperator(BaseOperator):
         arg_values = self._validate_arguments()
         kwds_values = self._validate_keywords()
         value = self.operator_fn.callback(*arg_values, **kwds_values)
-        return self.operator_fn.return_type.validate(value)
+        return self.operator_fn.output.validate(value)
 
     def draw(self) -> str:
         return f"{self.token.value}"
@@ -125,7 +103,7 @@ class Operator(LeafOperator):
                 value = input_param.validate_execute(input_.execute())
             except ValidationError as e:
                 raise OperatorError(
-                    ErrorType.INPUT_VALIDATION_ERROR,
+                    "Data validation error!",
                     ctx={"token": input_.token, "validation_error": e},
                 )
             input_values.append(value)
@@ -137,7 +115,7 @@ class Operator(LeafOperator):
         input_values = self._validate_execute_inputs()
         positional_args = self._compose_arg_values(arg_values, input_values)
         value = self.operator_fn.callback(*positional_args, **kwds_values)
-        return self.operator_fn.return_type.validate(value)
+        return self.operator_fn.output.validate(value)
 
     def draw(self) -> str:
         res = f"{self.token.value} [ "

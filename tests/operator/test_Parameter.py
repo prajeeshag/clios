@@ -1,8 +1,8 @@
 # type: ignore
 import pytest
 
-from clios.operator.model import Parameter, ParameterKind
-from clios.operator.params import Input, Param
+from clios.operator.operator_fn import Parameter, ParameterKind
+from clios.operator.param_info import Input, Param
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def param_input():
     return Parameter(
         name="test_input",
         kind=ParameterKind.POSITIONAL_ONLY,
-        param_type=Input(strict=True),
+        info=Input(strict=True),
         annotation=int,
     )
 
@@ -20,7 +20,7 @@ def param_kwds():
     return Parameter(
         name="test_param",
         kind=ParameterKind.KEYWORD_ONLY,
-        param_type=Param(strict=False),
+        info=Param(strict=False),
         annotation=str,
     )
 
@@ -30,7 +30,7 @@ def param_positional():
     return Parameter(
         name="test_param",
         kind=ParameterKind.POSITIONAL_ONLY,
-        param_type=Param(strict=False),
+        info=Param(strict=False),
         annotation=str,
     )
 
@@ -66,8 +66,8 @@ def test_is_positional_param(param_input, param_positional):
 
 
 def test_is_keyword(param_input, param_kwds):
-    assert param_input.is_keyword is False
-    assert param_kwds.is_keyword is True
+    assert param_input.is_keyword_param is False
+    assert param_kwds.is_keyword_param is True
 
 
 def test_is_positional(param_input, param_kwds):

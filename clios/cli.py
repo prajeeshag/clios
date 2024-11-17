@@ -6,12 +6,26 @@ from rich.table import Table
 from rich.text import Text
 
 from .exceptions import CliosError
-from .operator.model import OperatorFn
+from .operator.operator_fn import OperatorFn
 from .registry import OperatorRegistry
 
 
-def process_error(error: CliosError) -> None:
+def process_error(error: CliosError, args: list[str]) -> None:
+    """
+    Process an error and present it nicely to the terminal.
+
+    Args:
+        error (CliosError): The error to process.
+        args (list[str]): The arguments passed to the CLI.
+    """
     pass
+    # Get the error message
+
+    # From context, get token_index if available
+
+    # Get argument index if available
+
+    # Get the command name
 
 
 def print_list(operators: OperatorRegistry):

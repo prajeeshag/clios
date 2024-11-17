@@ -5,7 +5,7 @@ from pydantic.dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class _ParamBase:
+class _ParamInfoBase:
     strict: bool = False
     build_phase_validators: tuple[Callable[[Any], Any], ...] = ()
     execute_phase_validators: tuple[Callable[[Any], Any], ...] = ()
@@ -13,12 +13,12 @@ class _ParamBase:
 
 
 @dataclass(frozen=True)
-class Param(_ParamBase):
+class Param(_ParamInfoBase):
     pass
 
 
 @dataclass(frozen=True)
-class Input(_ParamBase):
+class Input(_ParamInfoBase):
     pass
 
 

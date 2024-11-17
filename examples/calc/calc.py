@@ -2,7 +2,7 @@
 from typing import Annotated, Any
 
 from clios import Clios, Param
-from clios.operator.params import Output
+from clios.operator.param_info import Output
 
 app = Clios()
 # [app_created]
