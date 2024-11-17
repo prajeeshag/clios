@@ -1,7 +1,9 @@
+import typing as t
 from enum import Enum
-from typing import Any, TypedDict
 
 from pydantic import ValidationError
+
+from clios.exceptions import CliosError
 
 from .operator.model import OperatorFn
 from .operator.operator import (
@@ -33,24 +35,14 @@ class ErrorType(str, Enum):
     SYNTAX_NOT_SUPPORTED = "Syntax not supported"
 
 
-class ParserErrorCtx(TypedDict, total=False):
-    token_index: int
-    unchainable_token_index: int
-    expected_num_args: int
-    arg_key: str
-    arg_index: int
-    validation_error: ValidationError
-
-
-class ParserError(Exception):
+class ParserError(CliosError):
     def __init__(
         self,
         error_type: ErrorType,
-        ctx: ParserErrorCtx = {},
+        ctx: CliosError.CliosErrorCtx = {},
     ) -> None:
         self.error_type = error_type
-        self.ctx = ctx
-        super().__init__(error_type.value)
+        super().__init__(error_type.value, ctx)
 
 
 class _Empty:
@@ -58,10 +50,7 @@ class _Empty:
 
 
 class ASTBuilder:
-    def __init__(
-        self,
-        operators: OperatorRegistry,
-    ) -> None:
+    def __init__(self, operators: OperatorRegistry) -> None:
         self._operators = operators
 
     def parse_tokens(
@@ -151,7 +140,7 @@ class ASTBuilder:
             if isinstance(tkn, OperatorToken):
                 child_op = self._get_operator(tkn, child_token_index)
                 in_type = input_param.type_
-                if in_type is not Any and in_type != child_op.return_type.type_:
+                if in_type is not t.Any and in_type != child_op.return_type.type_:
                     raise ParserError(
                         ErrorType.CHAIN_TYPE_ERROR,
                         ctx={
@@ -211,9 +200,9 @@ def _validate_operator_arguments(
     op_fn: OperatorFn,
     args: tuple[str, ...],
     index: int,
-) -> tuple[Any, ...]:
+) -> tuple[t.Any, ...]:
     _verify_operator_arguments(op_fn, args, index)
-    arg_values: list[Any] = []
+    arg_values: list[t.Any] = []
     iter_args = op_fn.iter_args()
     for i, val in enumerate(args):
         param = next(iter_args)
@@ -245,10 +234,10 @@ def _validate_operator_keywords(
     op_fn: OperatorFn,
     kwds: tuple[KWd, ...],
     index: int,
-) -> dict[str, Any]:
+) -> dict[str, t.Any]:
     kwds_dict = {kw.key: kw.val for kw in kwds}
     _verify_operator_keywords(op_fn, kwds_dict, index)
-    arg_values: dict[str, Any] = {}
+    arg_values: dict[str, t.Any] = {}
     for key, val in kwds_dict.items():
         param = op_fn.get_kwd(key)
         try:
