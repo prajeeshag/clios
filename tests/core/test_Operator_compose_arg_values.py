@@ -2,8 +2,8 @@
 import pytest
 
 from clios.cli.tokenizer import OperatorToken as Ot
-from clios.operator.operator import LeafOperator
-from clios.operator.operator_fn import Parameter
+from clios.core.operator import LeafOperator
+from clios.core.operator_fn import Parameter
 
 
 @pytest.fixture

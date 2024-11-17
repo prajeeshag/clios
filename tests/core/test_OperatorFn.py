@@ -1,8 +1,8 @@
 # type: ignore
 import pytest
 
-from clios.operator.operator_fn import OperatorFn, Parameter, ParameterKind, ReturnType
-from clios.operator.param_info import Input, Param
+from clios.core.operator_fn import OperatorFn, Parameter, ParameterKind, ReturnType
+from clios.core.param_info import Input, Param
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 from typing import Hashable
 
-from .operator.operator_fn import OperatorFn
+from .core.operator_fn import OperatorFn
 
 
 class KeyExistsError(Exception):

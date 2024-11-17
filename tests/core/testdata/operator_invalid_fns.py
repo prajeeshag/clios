@@ -3,7 +3,7 @@ import sys
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from clios.operator.param_info import Input
+from clios.core.param_info import Input
 
 from .utils import list_functions
 
