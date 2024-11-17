@@ -6,18 +6,25 @@ app = Clios()
 
 
 @app.operator()
-def add(input1: int, input2: int) -> int:
+def add(input1: float, input2: float) -> float:
     return input1 + input2
 
 
 @app.operator()
-def sub(input1: int, input2: int) -> int:
+def sub(input1: float, input2: float) -> float:
     return input1 - input2
 
 
-@app.operator(name="sum")
-def sum_(*input: int) -> int:
-    return sum(input)
+@app.operator()
+def sqrt(input: float) -> float:
+    """Calculate the square root of a number."""
+    return input**0.5
+
+
+@app.operator()
+def mean(*inputs: float) -> float:
+    """Calculate the mean of a list of numbers."""
+    return sum(inputs) / len(inputs)
 
 
 # [main_start]

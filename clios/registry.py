@@ -24,6 +24,9 @@ class _Registry[K, O]:
     def has_key(self, key: K) -> bool:
         return key in self._db
 
+    def items(self):
+        return self._db.items()
+
 
 class OperatorRegistry(_Registry[str, OperatorFn]):
     pass
