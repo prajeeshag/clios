@@ -6,12 +6,12 @@ from rich import print
 
 from clios.operator.operator import RootOperator
 
-from .ast_builder import ASTBuilder
 from .cli import print_detail, print_list
-from .operator.params import Input
+from .cli.ast_builder import ASTBuilder
+from .cli.tokenizer import tokenize
+from .operator.param_info import Input
 from .operator.utils import Implicit, get_operator_fn
 from .registry import OperatorRegistry
-from .tokenizer import tokenize
 
 
 def output(input: Annotated[Any, Input()]) -> None:

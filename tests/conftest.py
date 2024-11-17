@@ -4,8 +4,8 @@ from typing import Annotated
 
 import pytest
 
-from clios.ast_builder import ASTBuilder
-from clios.operator.params import Input, Output, Param
+from clios.cli.ast_builder import ASTBuilder
+from clios.operator.param_info import Input, Output, Param
 from clios.operator.utils import get_operator_fn
 from clios.registry import OperatorRegistry
 

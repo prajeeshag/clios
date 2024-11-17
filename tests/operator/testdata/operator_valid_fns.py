@@ -1,11 +1,11 @@
 # type: ignore
 from typing import Annotated
 
-from clios.operator.model import OperatorFn as OpFn
-from clios.operator.model import Parameter as P
-from clios.operator.model import ParameterKind as PK
-from clios.operator.model import ReturnType as RT
-from clios.operator.params import Input, Output, Param
+from clios.operator.operator_fn import OperatorFn as OpFn
+from clios.operator.operator_fn import Parameter as P
+from clios.operator.operator_fn import ParameterKind as PK
+from clios.operator.operator_fn import ReturnType as RT
+from clios.operator.param_info import Input, Output, Param
 
 passing = []
 

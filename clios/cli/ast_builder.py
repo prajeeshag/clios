@@ -1,48 +1,20 @@
 import typing as t
-from enum import Enum
 
 from pydantic import ValidationError
 
-from clios.exceptions import CliosError
+from clios.exceptions import ParserError
+from clios.operator.param_parser import KWd
 
-from .operator.model import OperatorFn
-from .operator.operator import (
+from ..operator.operator import (
     BaseOperator,
     LeafOperator,
     Operator,
     RootOperator,
     SimpleOperator,
 )
-from .registry import OperatorRegistry
-from .tokenizer import KWd, OperatorToken, StringToken, Token
-
-
-class ErrorType(str, Enum):
-    OPERATOR_NOT_FOUND = "Operator not found"
-    UNSUPPORTED_ROOT_OPERATOR = "Unsupported root operator"
-    MISSING_OUTPUT = "Missing output"
-    MISSING_OUTPUT_FILE = "Missing output file"
-    TOO_MANY_INPUTS = "Too many inputs"
-    TOO_FEW_INPUTS = "Too few inputs"
-    MISSING_INPUTS = "Missing inputs"
-    TOO_MANY_ARGS = "Too many arguments"
-    TOO_FEW_ARGS = "Too few arguments"
-    MISSING_REQUIRED_KWD = "Missing required keyword argument"
-    UNEXPECTED_KWD = "Unexpected keyword argument"
-    CHAIN_TYPE_ERROR = "Cannot chain operator"
-    ARG_VALIDATION_ERROR = "Argument validation error"
-    INPUT_VALIDATION_ERROR = "Input validation error"
-    SYNTAX_NOT_SUPPORTED = "Syntax not supported"
-
-
-class ParserError(CliosError):
-    def __init__(
-        self,
-        error_type: ErrorType,
-        ctx: CliosError.CliosErrorCtx = {},
-    ) -> None:
-        self.error_type = error_type
-        super().__init__(error_type.value, ctx)
+from ..operator.operator_fn import OperatorFn
+from ..registry import OperatorRegistry
+from .tokenizer import OperatorToken, StringToken, Token
 
 
 class _Empty:
@@ -69,22 +41,27 @@ class ASTBuilder:
         token_list.pop(0)
 
         if not isinstance(op_token, OperatorToken):
-            raise ParserError(ErrorType.OPERATOR_NOT_FOUND, ctx={"token_index": index})
+            raise ParserError(
+                f"Operator `{op_token}` not found!", ctx={"token_index": index}
+            )
 
         try:
             opfn = self._operators.get(op_token.name)
         except KeyError:
-            raise ParserError(ErrorType.OPERATOR_NOT_FOUND, ctx={"token_index": index})
+            raise ParserError(
+                f"Operator `{op_token.name}` not found!", ctx={"token_index": index}
+            )
 
         num_outputs = 0
         file_saver = None
-        if opfn.return_type.type_ is not None and not return_value:
-            file_saver = opfn.return_type.info.file_saver
+        if opfn.output.type_ is not None and not return_value:
+            file_saver = opfn.output.info.file_saver
             if file_saver is None:
                 raise ParserError(
-                    ErrorType.UNSUPPORTED_ROOT_OPERATOR, ctx={"token_index": index}
+                    f"Operator `{op_token.name}` cannot be used as root operator!",
+                    ctx={"token_index": index},
                 )
-            num_outputs = opfn.return_type.info.num_outputs
+            num_outputs = opfn.output.info.num_outputs
 
         output_file_paths: list[str] = []
         for i in range(num_outputs):
@@ -92,12 +69,12 @@ class ASTBuilder:
                 outputtkn = token_list.pop()
                 if not isinstance(outputtkn, StringToken):
                     raise ParserError(
-                        ErrorType.MISSING_OUTPUT_FILE,
+                        "Output file path must be a string",
                         ctx={"token_index": num_tokens - 1 - i},
                     )
                 output_file_paths.append(str(outputtkn))
             except IndexError:
-                raise ParserError(ErrorType.MISSING_OUTPUT, ctx={"token_index": index})
+                raise ParserError("Missing output(s)!", ctx={"token_index": index})
 
         token_list = list(reversed(token_list))
 
@@ -105,7 +82,7 @@ class ASTBuilder:
 
         if len(token_list) != 0:
             raise ParserError(
-                ErrorType.TOO_MANY_INPUTS,
+                "Got too many inputs!",
                 ctx={"token_index": num_tokens - len(token_list)},
             )
 
@@ -140,9 +117,9 @@ class ASTBuilder:
             if isinstance(tkn, OperatorToken):
                 child_op = self._get_operator(tkn, child_token_index)
                 in_type = input_param.type_
-                if in_type is not t.Any and in_type != child_op.return_type.type_:
+                if in_type is not t.Any and in_type != child_op.output.type_:
                     raise ParserError(
-                        ErrorType.CHAIN_TYPE_ERROR,
+                        "These operators cannot be chained together!",
                         ctx={
                             "token_index": index,
                             "unchainable_token_index": child_token_index,
@@ -159,7 +136,7 @@ class ASTBuilder:
                     value = input_param.validate_build(tkn.value)
                 except ValidationError as e:
                     raise ParserError(
-                        ErrorType.INPUT_VALIDATION_ERROR,
+                        "Data validation error!",
                         ctx={
                             "token_index": child_token_index,
                             "validation_error": e,
@@ -170,15 +147,15 @@ class ASTBuilder:
                 )
             else:
                 raise ParserError(
-                    ErrorType.SYNTAX_NOT_SUPPORTED,
+                    "This syntax is not supported yet!",
                     ctx={"token_index": child_token_index},
                 )
 
         if len(child_operators) < len(opfn.inputs):
-            raise ParserError(ErrorType.MISSING_INPUTS, ctx={"token_index": index})
+            raise ParserError("Missing inputs!", ctx={"token_index": index})
 
         if opfn.var_input is not None and (len(child_operators) - len(opfn.inputs)) < 1:
-            raise ParserError(ErrorType.TOO_FEW_INPUTS, ctx={"token_index": index})
+            raise ParserError("Missing inputs!", ctx={"token_index": index})
 
         return Operator(
             op_token,
@@ -192,7 +169,9 @@ class ASTBuilder:
         try:
             op = self._operators.get(tkn.name)
         except KeyError:
-            raise ParserError(ErrorType.OPERATOR_NOT_FOUND, ctx={"token_index": index})
+            raise ParserError(
+                f"Operator `{tkn.name}` not found!", ctx={"token_index": index}
+            )
         return op
 
 
@@ -210,7 +189,7 @@ def _validate_operator_arguments(
             arg_values.append(param.validate_build(val))
         except ValidationError as e:
             raise ParserError(
-                ErrorType.ARG_VALIDATION_ERROR,
+                "Data validation error!",
                 ctx={"token_index": index, "arg_index": i, "validation_error": e},
             )
     return tuple(arg_values)
@@ -220,13 +199,13 @@ def _verify_operator_arguments(op_fn: OperatorFn, args: tuple[str, ...], index: 
     len_required_args = len(op_fn.required_args)
     if len(args) < len_required_args:
         raise ParserError(
-            ErrorType.TOO_FEW_ARGS,
-            ctx={"token_index": index, "expected_num_args": len_required_args},
+            f"Missing arguments: expected atleast {len_required_args}, got {len(args)}",
+            ctx={"token_index": index},
         )
     if len(args) > len(op_fn.args) and op_fn.var_args is None:
         raise ParserError(
-            ErrorType.TOO_MANY_ARGS,
-            ctx={"token_index": index, "expected_num_args": len_required_args},
+            f"Too many arguments: expected {len_required_args}, got {len(args)}",
+            ctx={"token_index": index},
         )
 
 
@@ -244,7 +223,7 @@ def _validate_operator_keywords(
             arg_values[key] = param.validate_build(val)
         except ValidationError as e:
             raise ParserError(
-                ErrorType.ARG_VALIDATION_ERROR,
+                "Data validation error!",
                 ctx={"token_index": index, "arg_key": key, "validation_error": e},
             )
     return arg_values
@@ -256,12 +235,13 @@ def _verify_operator_keywords(op_fn: OperatorFn, kwds: dict[str, str], index: in
     for key in required_kwds_keys:
         if key not in kwds:
             raise ParserError(
-                ErrorType.MISSING_REQUIRED_KWD,
+                f"Missing required keyword argument: `{key}`!",
                 ctx={"token_index": index, "arg_key": key},
             )
     if op_fn.var_kwds is None:
         for key in kwds:
             if key not in kwds_keys:
                 raise ParserError(
-                    ErrorType.UNEXPECTED_KWD, ctx={"token_index": index, "arg_key": key}
+                    f"Unexpected keyword argument: `{key}`!",
+                    ctx={"token_index": index, "arg_key": key},
                 )

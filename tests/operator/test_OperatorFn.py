@@ -1,8 +1,8 @@
 # type: ignore
 import pytest
 
-from clios.operator.model import OperatorFn, Parameter, ParameterKind, ReturnType
-from clios.operator.params import Input, Param
+from clios.operator.operator_fn import OperatorFn, Parameter, ParameterKind, ReturnType
+from clios.operator.param_info import Input, Param
 
 
 @pytest.fixture
@@ -11,51 +11,51 @@ def parameters():
         Parameter(
             name="input",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=Input(strict=True),
+            info=Input(strict=True),
             annotation=int,
         ),
         Parameter(
             name="positional_required",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
         ),
         Parameter(
             name="positional_optional",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
             default="default",
         ),
         Parameter(
             name="var_input",
             kind=ParameterKind.VAR_POSITIONAL,
-            param_type=Input(strict=True),
+            info=Input(strict=True),
             annotation=int,
         ),
         Parameter(
             name="var_positional",
             kind=ParameterKind.VAR_POSITIONAL,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=list[int],
         ),
         Parameter(
             name="kwd_required",
             kind=ParameterKind.KEYWORD_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
         ),
         Parameter(
             name="kwd_optional",
             kind=ParameterKind.KEYWORD_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
             default="default",
         ),
         Parameter(
             name="var_keyword",
             kind=ParameterKind.VAR_KEYWORD,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=dict[str, str],
         ),
     )
@@ -67,26 +67,26 @@ def parameters_novar():
         Parameter(
             name="positional_required",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
         ),
         Parameter(
             name="positional_optional",
             kind=ParameterKind.POSITIONAL_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
             default="default",
         ),
         Parameter(
             name="kwd_required",
             kind=ParameterKind.KEYWORD_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
         ),
         Parameter(
             name="kwd_optional",
             kind=ParameterKind.KEYWORD_ONLY,
-            param_type=Param(strict=False),
+            info=Param(strict=False),
             annotation=str,
             default="default",
         ),
@@ -103,7 +103,7 @@ def operator_fn(parameters, return_type):
     def callback(*args, **kwargs):
         return sum(args)
 
-    return OperatorFn(parameters=parameters, return_type=return_type, callback=callback)
+    return OperatorFn(parameters=parameters, output=return_type, callback=callback)
 
 
 @pytest.fixture
@@ -112,7 +112,7 @@ def operator_fn_novar(parameters_novar, return_type):
         return sum(args)
 
     return OperatorFn(
-        parameters=parameters_novar, return_type=return_type, callback=callback
+        parameters=parameters_novar, output=return_type, callback=callback
     )
 
 

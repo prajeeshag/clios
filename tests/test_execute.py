@@ -2,15 +2,15 @@
 import pytest
 from pydantic import ValidationError
 
-from clios.operator.operator import ErrorType, OperatorError, RootOperator
-from clios.tokenizer import OperatorToken as Ot
-from clios.tokenizer import StringToken as Ft
+from clios.cli.tokenizer import OperatorToken as Ot
+from clios.cli.tokenizer import StringToken as Ft
+from clios.operator.operator import OperatorError, RootOperator
 
 execute_validation_error = [
     [
         [Ot("op_1P,a")],
         {
-            "error_type": ErrorType.ARG_VALIDATION_ERROR,
+            "error_type": "Data validation error!",
             "token": Ot("op_1P,a"),
             "arg_index": 0,
         },
@@ -18,7 +18,7 @@ execute_validation_error = [
     [
         [Ot("op_1K,ip=a")],
         {
-            "error_type": ErrorType.ARG_VALIDATION_ERROR,
+            "error_type": "Data validation error!",
             "token": Ot("op_1K,ip=a"),
             "arg_key": "ip",
         },
@@ -26,7 +26,7 @@ execute_validation_error = [
     [
         [Ot("op_1I"), Ft("input")],
         {
-            "error_type": ErrorType.INPUT_VALIDATION_ERROR,
+            "error_type": "Data validation error!",
             "token": Ft("input"),
         },
     ],
@@ -38,7 +38,7 @@ def test_validation_error(parser, input, expected):
     op = parser.parse_tokens(input)
     with pytest.raises(OperatorError) as e:
         op.execute()
-    assert str(e.value) == expected["error_type"].value
+    assert str(e.value) == expected["error_type"]
     assert e.value.ctx["token"] == expected["token"]
     assert isinstance(e.value.ctx["validation_error"], ValidationError)
     if "arg_index" in expected:
