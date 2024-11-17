@@ -5,8 +5,7 @@ from typing import Annotated
 import pytest
 
 from clios.cli.ast_builder import ASTBuilder
-from clios.operator.param_info import Input, Output, Param
-from clios.operator.utils import get_operator_fn
+from clios.core.param_info import Input, Output, Param
 from clios.registry import OperatorRegistry
 
 intOut = Annotated[int, Output(file_saver=print)]
@@ -98,8 +97,8 @@ def list_functions():
 
 
 operators = OperatorRegistry()
-for func in list_functions():
-    operators.add(func.__name__, get_operator_fn(func))
+# for func in list_functions():
+#     operators.add(func.__name__, get_operator_fn(func))
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@ from pydantic import ValidationError
 
 from clios.cli.tokenizer import OperatorToken as Ot
 from clios.cli.tokenizer import StringToken as Ft
-from clios.operator.operator import OperatorError, RootOperator
+from clios.core.operator import OperatorError, RootOperator
 
 execute_validation_error = [
     [

@@ -41,7 +41,7 @@ class LeafOperator(BaseOperator):
 
     def _validate_arguments(self) -> list[Any]:
         arg_values: list[Any] = []
-        iter_args = self.operator_fn.iter_args()
+        iter_args = self.operator_fn.iter_positional_arguments()
         for i, val in enumerate(self.args):
             param = next(iter_args)
             try:
@@ -56,7 +56,7 @@ class LeafOperator(BaseOperator):
     def _validate_keywords(self) -> dict[str, Any]:
         arg_values: dict[str, Any] = {}
         for key, val in self.kwds.items():
-            param = self.operator_fn.get_kwd(key)
+            param = self.operator_fn.get_keyword_argument(key)
             try:
                 arg_values[key] = param.validate_execute(val)
             except ValidationError as e:

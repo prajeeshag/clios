@@ -11,7 +11,7 @@ from pydantic.functional_validators import (
     WrapValidator,
 )
 
-from clios.operator.operator_fn import ReturnType
+from clios.core.operator_fn import ReturnType
 
 
 @pytest.fixture

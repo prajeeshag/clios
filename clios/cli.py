@@ -5,8 +5,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from .core.operator_fn import OperatorFn
 from .exceptions import CliosError
-from .operator.operator_fn import OperatorFn
 from .registry import OperatorRegistry
 
 

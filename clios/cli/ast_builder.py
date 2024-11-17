@@ -2,17 +2,17 @@ import typing as t
 
 from pydantic import ValidationError
 
+from clios.core.parameter import ParamVal
 from clios.exceptions import ParserError
-from clios.operator.param_parser import KWd
 
-from ..operator.operator import (
+from ..core.operator import (
     BaseOperator,
     LeafOperator,
     Operator,
     RootOperator,
     SimpleOperator,
 )
-from ..operator.operator_fn import OperatorFn
+from ..core.operator_fn import OperatorFn
 from ..registry import OperatorRegistry
 from .tokenizer import OperatorToken, StringToken, Token
 
@@ -182,7 +182,7 @@ def _validate_operator_arguments(
 ) -> tuple[t.Any, ...]:
     _verify_operator_arguments(op_fn, args, index)
     arg_values: list[t.Any] = []
-    iter_args = op_fn.iter_args()
+    iter_args = op_fn.iter_positional_arguments()
     for i, val in enumerate(args):
         param = next(iter_args)
         try:
@@ -211,14 +211,14 @@ def _verify_operator_arguments(op_fn: OperatorFn, args: tuple[str, ...], index: 
 
 def _validate_operator_keywords(
     op_fn: OperatorFn,
-    kwds: tuple[KWd, ...],
+    kwds: tuple[ParamVal, ...],
     index: int,
 ) -> dict[str, t.Any]:
     kwds_dict = {kw.key: kw.val for kw in kwds}
     _verify_operator_keywords(op_fn, kwds_dict, index)
     arg_values: dict[str, t.Any] = {}
     for key, val in kwds_dict.items():
-        param = op_fn.get_kwd(key)
+        param = op_fn.get_keyword_argument(key)
         try:
             arg_values[key] = param.validate_build(val)
         except ValidationError as e:
