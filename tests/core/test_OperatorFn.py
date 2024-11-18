@@ -1,8 +1,16 @@
 # type: ignore
+import typing as t
+
 import pytest
 
 from clios.core.operator_fn import OperatorFn, Parameter, ParameterKind, ReturnType
-from clios.core.param_info import Input, Param
+from clios.core.param_info import Input, Output, Param
+
+
+def test_operator_fn(
+    in1: int, in2: t.Annotated[str, Input(strict=True)], out: t.Annotated[int, Output]
+):
+    pass
 
 
 @pytest.fixture
