@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
 
-from pydantic import BeforeValidator, PydanticSchemaGenerationError, Strict, TypeAdapter
+from pydantic import BeforeValidator, Strict, TypeAdapter
 from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
 from typing_extensions import Doc
 
@@ -162,22 +162,16 @@ class Parameter:
         )
 
         description = _get_description(param.annotation)
-
-        try:
-            return cls(
-                name=param.name,
-                kind=kind,
-                info=param_type,
-                annotation=param.annotation,
-                build_phase_validator=build_phase_validator,
-                execute_phase_validator=execute_phase_validator,
-                description=description,
-                default=default,
-            )
-        except PydanticSchemaGenerationError:
-            raise AssertionError(
-                f"Unsupported type annotation for parameter `{param.name}`"
-            )
+        return cls(
+            name=param.name,
+            kind=kind,
+            info=param_type,
+            annotation=param.annotation,
+            build_phase_validator=build_phase_validator,
+            execute_phase_validator=execute_phase_validator,
+            description=description,
+            default=default,
+        )
 
     @property
     def is_input(self):
@@ -222,6 +216,12 @@ class Parameter:
     @property
     def is_required(self):
         """Check if the parameter is required"""
+        if self.is_input:
+            return True
+
+        if self.is_var_param or self.is_var_keyword:
+            return False
+
         return self.default is Parameter.empty
 
 
@@ -230,8 +230,8 @@ class ReturnValue:
     """A dataclass to represent the return type of an operator function"""
 
     validator: TypeAdapter[t.Any]
-    annotation: t.Any = None
-    info: Output = Output()
+    annotation: t.Any
+    info: Output
 
     @classmethod
     def validate(cls, annotation: t.Any, info: Output) -> "ReturnValue":
@@ -240,16 +240,17 @@ class ReturnValue:
             type_adapter: TypeAdapter[t.Any] = TypeAdapter(None)
         else:
             if t.get_origin(annotation) is t.Annotated:
-                metadata = [
-                    arg
+                if any(
+                    isinstance(arg, prohibited_validators)
                     for arg in t.get_args(annotation)[1:]
-                    if not isinstance(arg, prohibited_validators)
-                ]
+                ):
+                    raise AssertionError(
+                        "Only `BeforeValidator` is allowed on return value!"
+                    )
+                metadata = [arg for arg in t.get_args(annotation)[1:]]
                 type_ = t.get_args(annotation)[0]
                 if metadata:
                     annotation = t.Annotated[type_, *metadata]
-                else:
-                    annotation = type_
             annotation = t.Annotated[annotation, Strict()]
             type_adapter: TypeAdapter[t.Any] = TypeAdapter(annotation)
         return cls(type_adapter, annotation, info)
@@ -271,10 +272,11 @@ class Parameters(tuple[Parameter, ...]):
 
     def iter_positional_arguments(self) -> t.Generator[Parameter, None, None]:
         """Iterate over positional arguments"""
-        for param in self.args:
-            yield param
-        while self.var_args is not None:
-            yield self.var_args
+        for param in self:
+            if param.is_positional_param:
+                yield param
+        while self.var_argument is not None:
+            yield self.var_argument
 
     def iter_inputs(self) -> t.Generator[Parameter, None, None]:
         """Iterate over input arguments"""
@@ -287,7 +289,7 @@ class Parameters(tuple[Parameter, ...]):
         """Iterate over positional (i.e. both input and arguments)"""
         var_param = None
         for param in self:
-            if param.is_var_positional:
+            if param.is_var_param or param.is_var_input:
                 var_param = param
                 break
             if param.is_keyword_param or param.is_var_keyword:
@@ -299,20 +301,16 @@ class Parameters(tuple[Parameter, ...]):
 
     def get_keyword_argument(self, key: str) -> Parameter:
         """Get the keyword argument by key"""
-        if key in self.kwds:
-            return self.kwds[key]
-        if self.var_kwds is not None:
-            return self.var_kwds
+        for param in self:
+            if param.is_keyword_param:
+                if param.name == key:
+                    return param
+        if self.var_keyword is not None:
+            return self.var_keyword
         raise KeyError(f"Unexpected keyword argument: {key}")
 
     @cached_property
-    def args(self) -> tuple[Parameter, ...]:
-        """Get a tuple of positional arguments"""
-        params = [param for param in self if param.is_positional_param]
-        return tuple(params)
-
-    @cached_property
-    def var_args(self) -> Parameter | None:
+    def var_argument(self) -> Parameter | None:
         """Get the variable positional argument, if any"""
         for param in self:
             if param.is_var_param:
@@ -320,12 +318,7 @@ class Parameters(tuple[Parameter, ...]):
         return None
 
     @cached_property
-    def kwds(self) -> dict[str, Parameter]:
-        """Get a dictionary of keyword arguments"""
-        return {param.name: param for param in self if param.is_keyword_param}
-
-    @cached_property
-    def var_kwds(self) -> Parameter | None:
+    def var_keyword(self) -> Parameter | None:
         """Get the variable keyword argument, if any"""
         for param in self:
             if param.is_var_keyword:

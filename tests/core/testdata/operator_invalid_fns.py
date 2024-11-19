@@ -3,6 +3,8 @@ import sys
 from dataclasses import dataclass
 from typing import Annotated, Any
 
+from pydantic import AfterValidator
+
 from clios.core.param_info import Input
 
 from .utils import list_functions
@@ -44,6 +46,10 @@ def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:
 
 def ff25(*, input1: Annotated[int, Input()]) -> int:
     """Input parameter `input1` cannot be keyword argument"""
+
+
+def ff26() -> Annotated[int, AfterValidator(int)]:
+    """Only `BeforeValidator` is allowed on return value!"""
 
 
 _current_module = sys.modules[__name__]

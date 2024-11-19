@@ -49,7 +49,7 @@ class OperatorFn:
         output_info = get_output_info(return_annotation)
         return OperatorFn(
             parameters=Parameters(parameter_list),
-            output=ReturnValue(return_annotation, output_info),
+            output=ReturnValue.validate(return_annotation, output_info),
             callback=func,
             param_parser=arg_parser,
         )
