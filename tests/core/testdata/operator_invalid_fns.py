@@ -42,6 +42,10 @@ def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:
     """Unsupported type annotation for parameter `input1`"""
 
 
+def ff25(*, input1: Annotated[int, Input()]) -> int:
+    """Input parameter `input1` cannot be keyword argument"""
+
+
 _current_module = sys.modules[__name__]
 ff_fns = list_functions(_current_module, "ff")
 failing = [InputFailing(fn, AssertionError(fn.__doc__)) for fn in ff_fns]

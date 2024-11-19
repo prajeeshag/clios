@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from docstring_parser import parse as parse_docstring  # type: ignore
 
 from .arg_parser import OprArgParserAbc
-from .parameter import Parameter, Parameters, ReturnType
+from .parameter import Parameter, Parameters, ReturnValue
 from .utils import get_output_info, get_typed_signature
 
 Implicit = t.Literal["input", "param"]
@@ -16,7 +16,7 @@ class OperatorFn:
     """A dataclass to represent an operator function"""
 
     parameters: Parameters
-    output: ReturnType
+    output: ReturnValue
     callback: t.Callable[..., t.Any]
     param_parser: OprArgParserAbc
 
@@ -49,7 +49,7 @@ class OperatorFn:
         output_info = get_output_info(return_annotation)
         return OperatorFn(
             parameters=Parameters(parameter_list),
-            output=ReturnType(return_annotation, output_info),
+            output=ReturnValue(return_annotation, output_info),
             callback=func,
             param_parser=arg_parser,
         )

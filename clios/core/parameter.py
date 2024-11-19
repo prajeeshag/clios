@@ -104,7 +104,7 @@ class Parameter:
     description: str = ""
 
     @classmethod
-    def validate(cls, param: i.Parameter, implicit: str = "") -> "Parameter":
+    def validate(cls, param: i.Parameter, implicit: str) -> "Parameter":
         assert (
             param.annotation is not i.Signature.empty
         ), f"Missing type annotation for parameter `{param.name}`"
@@ -220,18 +220,13 @@ class Parameter:
         return self.kind == ParameterKind.POSITIONAL_ONLY and not self.is_input
 
     @property
-    def is_var_positional(self):
-        """Check if the parameter is a variable positional"""
-        return self.kind == ParameterKind.VAR_POSITIONAL
-
-    @property
     def is_required(self):
         """Check if the parameter is required"""
         return self.default is Parameter.empty
 
 
 @dataclass(frozen=True)
-class ReturnType:
+class ReturnValue:
     """A dataclass to represent the return type of an operator function"""
 
     validator: TypeAdapter[t.Any]
@@ -239,7 +234,7 @@ class ReturnType:
     info: Output = Output()
 
     @classmethod
-    def validate(cls, annotation: t.Any, info: Output) -> "ReturnType":
+    def validate(cls, annotation: t.Any, info: Output) -> "ReturnValue":
         prohibited_validators = (PlainValidator, WrapValidator, AfterValidator)
         if _get_type(annotation) is None:
             type_adapter: TypeAdapter[t.Any] = TypeAdapter(None)
