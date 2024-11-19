@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable
 
 from pydantic import ValidationError
@@ -37,7 +37,7 @@ class SimpleOperator(BaseOperator):
 class LeafOperator(BaseOperator):
     operator_fn: OperatorFn
     args: tuple[Any, ...] = ()
-    kwds: dict[str, Any] = field(default_factory=dict)
+    kwds: tuple[tuple[str, Any], ...] = ()
 
     def _validate_arguments(self) -> list[Any]:
         arg_values: list[Any] = []
@@ -55,7 +55,7 @@ class LeafOperator(BaseOperator):
 
     def _validate_keywords(self) -> dict[str, Any]:
         arg_values: dict[str, Any] = {}
-        for key, val in self.kwds.items():
+        for key, val in self.kwds:
             param = self.operator_fn.parameters.get_keyword_argument(key)
             try:
                 arg_values[key] = param.execute_phase_validator.validate_python(val)

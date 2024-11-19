@@ -17,11 +17,19 @@ from ..registry import OperatorRegistry
 from .tokenizer import OperatorToken, StringToken, Token
 
 
+class CliParserError(Exception):
+    def __init__(self, message: str, index: int, ctx: dict[str, t.Any]) -> None:
+        self.message = message
+        self.index = index
+        self.ctx = ctx
+        super().__init__(message)
+
+
 class _Empty:
     pass
 
 
-class ASTBuilder:
+class CliParser:
     def __init__(self, operators: OperatorRegistry) -> None:
         self._operators = operators
 
@@ -41,7 +49,7 @@ class ASTBuilder:
         token_list.pop(0)
 
         if not isinstance(op_token, OperatorToken):
-            raise ParserError(
+            raise CliParserError(
                 f"Operator `{op_token}` not found!", ctx={"token_index": index}
             )
 

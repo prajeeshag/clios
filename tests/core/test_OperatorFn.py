@@ -6,8 +6,8 @@ from pydantic import BaseModel, Strict, TypeAdapter
 from typing_extensions import Doc
 
 from clios.core.operator_fn import OperatorFn
-from clios.core.operator_parser import OprParserAbc
 from clios.core.param_info import Input, Output, Param
+from clios.core.param_parser import ParamParserAbc
 from clios.core.parameter import Parameter, ParameterKind, Parameters, ReturnValue
 
 from .testdata.operator_invalid_fns import failing, failing_parameter_validation
@@ -15,7 +15,7 @@ from .testdata.operator_invalid_fns import failing, failing_parameter_validation
 
 @pytest.fixture
 def mock_arg_parser(mocker):
-    return mocker.MagicMock(spec=OprParserAbc)
+    return mocker.MagicMock(spec=ParamParserAbc)
 
 
 @pytest.mark.parametrize("input", failing)

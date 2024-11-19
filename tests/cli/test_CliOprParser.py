@@ -4,10 +4,10 @@ import typing as t
 import pytest
 from pydantic import ValidationError
 
-from clios.cli.operator_parser import CliOprParser
+from clios.cli.param_parser import CliParamParser
 from clios.core.operator_fn import OperatorFn
-from clios.core.operator_parser import OprParserError as ParserError
 from clios.core.param_info import Input, Output, Param
+from clios.core.param_parser import ParamParserError as ParserError
 
 intOut = t.Annotated[int, Output(file_saver=print)]
 intParam = t.Annotated[int, Param()]
@@ -266,7 +266,7 @@ build_validation_error = [
 
 @pytest.mark.parametrize("input,expected", invalid_operators)
 def test_parse_arguments(input, expected):
-    parser = CliOprParser()
+    parser = CliParamParser()
     parameters = OperatorFn.validate(input[1], parser).parameters
 
     with pytest.raises(ParserError) as e:
@@ -278,7 +278,7 @@ def test_parse_arguments(input, expected):
 
 @pytest.mark.parametrize("input,expected", build_validation_error)
 def test_parse_arguments_build_validation_error(input, expected):
-    parser = CliOprParser()
+    parser = CliParamParser()
     parameters = OperatorFn.validate(input[1], parser).parameters
 
     with pytest.raises(ParserError) as e:
@@ -291,12 +291,12 @@ def test_parse_arguments_build_validation_error(input, expected):
 
 
 def test_get_name():
-    parser = CliOprParser()
+    parser = CliParamParser()
     assert parser.get_name("op_1i1p,1,2") == "op_1i1p"
 
 
 def test_valid():
-    parser = CliOprParser()
+    parser = CliParamParser()
     parameters = OperatorFn.validate(op_1p1k, parser, implicit="param").parameters
     param_values = parser.parse_arguments("op_1p1k,1,ik=1", parameters)
     assert param_values[0].val == 1
@@ -306,7 +306,7 @@ def test_valid():
 
 
 def test_get_synopsis():
-    parser = CliOprParser()
+    parser = CliParamParser()
 
     def fn(
         input: int,

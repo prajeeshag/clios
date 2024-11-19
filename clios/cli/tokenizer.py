@@ -1,29 +1,7 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
-
-class TokenError(Exception):
-    def __init__(self, token: str = "", pos: int = 0, msg: str = "") -> None:
-        self.pos = pos
-        self.token = token
-        if msg:
-            super().__init__(msg)
-        else:
-            super().__init__()
-
-
-@dataclass(frozen=True)
-class Token(ABC):
-    value: str
-
-    @classmethod
-    @abstractmethod
-    def match(cls, string: str) -> bool:
-        raise NotImplementedError
-
-    def __str__(self) -> str:
-        return self.value
+from clios.core.tokenizer import Token, TokenError, Tokenizer
 
 
 @dataclass(frozen=True)
@@ -81,7 +59,7 @@ class TokenType(Enum):
     @classmethod
     def _missing_(cls, value: object) -> "TokenType":
         if not isinstance(value, str):
-            raise TokenError(msg="Invalid token type")
+            raise TokenError("Invalid token type")
         for member in cls:
             if member is not cls.STRING and member.value.match(value):
                 return member
@@ -89,9 +67,10 @@ class TokenType(Enum):
         return cls.STRING
 
 
-def tokenize(args: list[str]) -> tuple[Token, ...]:
-    tokens: list[Token] = []
-    for arg in args:
-        token = TokenType(arg)
-        tokens.append(token.value(arg))
-    return tuple(tokens)
+class CliTokenizer(Tokenizer[list[str]]):
+    def tokenize(self, input: list[str]) -> tuple[Token, ...]:
+        tokens: list[Token] = []
+        for arg in input:
+            token = TokenType(arg)
+            tokens.append(token.value(arg))
+        return tuple(tokens)
