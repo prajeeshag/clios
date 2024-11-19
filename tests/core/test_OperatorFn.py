@@ -2,18 +2,52 @@
 import typing as t
 
 import pytest
-from pydantic import Strict, TypeAdapter
+from pydantic import BaseModel, Strict, TypeAdapter
 from typing_extensions import Doc
 
-from clios.core.arg_parser import OprArgParserAbc
 from clios.core.operator_fn import OperatorFn
+from clios.core.operator_parser import OprParserAbc
 from clios.core.param_info import Input, Output, Param
 from clios.core.parameter import Parameter, ParameterKind, Parameters, ReturnValue
+
+from .testdata.operator_invalid_fns import failing, failing_parameter_validation
 
 
 @pytest.fixture
 def mock_arg_parser(mocker):
-    return mocker.MagicMock(spec=OprArgParserAbc)
+    return mocker.MagicMock(spec=OprParserAbc)
+
+
+@pytest.mark.parametrize("input", failing)
+def test_failing(input, mock_arg_parser):
+    with pytest.raises(AssertionError) as e:
+        OperatorFn.validate(input.fn, arg_parser=mock_arg_parser)
+    assert str(e.value) == str(input.e)
+
+
+@pytest.mark.parametrize("input", failing_parameter_validation)
+def test_failing_parameter_validation(input, mock_arg_parser):
+    with pytest.raises(AssertionError) as e:
+        OperatorFn.validate(input.fn, arg_parser=mock_arg_parser)
+    assert str(e.value) == str(input.e)
+
+
+def test_implicit_invalid(mock_arg_parser):
+    def dummy(i: int):
+        pass
+
+    with pytest.raises(AssertionError) as e:
+        OperatorFn.validate(dummy, implicit="invalid", arg_parser=mock_arg_parser)
+
+    assert str(e.value) == "Invalid implicit option `invalid`"
+
+
+class PydanticType(BaseModel):
+    val: int
+
+
+class SomeType:
+    pass
 
 
 def fn(
@@ -46,8 +80,17 @@ def fn3():
     pass
 
 
+def fn4(in1: "PydanticType") -> int:
+    pass
+
+
+def fn5(in1: SomeType) -> int:
+    pass
+
+
 def test_(mock_arg_parser):
     op = OperatorFn.validate(fn, arg_parser=mock_arg_parser)
+    op1 = OperatorFn.validate(fn1, arg_parser=mock_arg_parser)
     assert isinstance(op, OperatorFn)
     assert isinstance(op.parameters, Parameters)
     assert isinstance(op.output, ReturnValue)
@@ -55,6 +98,8 @@ def test_(mock_arg_parser):
     assert op.param_parser is mock_arg_parser
     assert op.short_description == "Short description"
     assert op.long_description == "Long description"
+    assert op1.short_description == ""
+    assert op1.long_description == ""
 
 
 def test_Parameter_is_input():
@@ -81,10 +126,14 @@ def test_Parameter_is_param():
 
 def test_Parameter_type_():
     op = OperatorFn.validate(fn, arg_parser=mock_arg_parser)
+    op4 = OperatorFn.validate(fn4, arg_parser=mock_arg_parser)
+    op5 = OperatorFn.validate(fn5, arg_parser=mock_arg_parser)
     assert op.parameters[0].type_ is int
     assert op.parameters[1].type_ is str
     assert op.parameters[2].type_ is str
     assert op.parameters[3].type_ is str
+    assert op4.parameters[0].type_ is PydanticType
+    assert op5.parameters[0].type_ is SomeType
 
 
 def test_Parameter_name():
@@ -178,7 +227,7 @@ def test_iter_positional():
 
 def test_Parameters_required_kwds():
     op = OperatorFn.validate(fn, arg_parser=mock_arg_parser)
-    required_kwds = op.parameters.required_kwds
+    required_kwds = op.parameters.required_keywords
     assert "k1" in required_kwds
     assert "k2" not in required_kwds
 

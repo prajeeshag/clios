@@ -242,6 +242,6 @@ def _verify_operator_keywords(op_fn: OperatorFn, kwds: dict[str, str], index: in
         for key in kwds:
             if key not in kwds_keys:
                 raise ParserError(
-                    f"Unexpected keyword argument: `{key}`!",
+                    f"Unknown keyword argument: `{key}`!",
                     ctx={"token_index": index, "arg_key": key},
                 )
