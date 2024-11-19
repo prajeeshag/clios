@@ -135,7 +135,7 @@ class CliParamParser(ParamParserAbc):
 
         return string[:sep_index], string[sep_index + 1 :]
 
-    def get_synopsis(self, parameters: Parameters, name: str) -> str:
+    def get_synopsis(self, parameters: Parameters) -> str:
         """get the synopsis of the operator function parameters"""
         required_positional_params: str = ""
         optional_positional_params: str = ""
@@ -162,8 +162,7 @@ class CliParamParser(ParamParserAbc):
             elif param.is_var_keyword:
                 optional_keyword_params += f"{self.arg_sep}**{param.name}"
 
-        res = name
-        res += required_positional_params
+        res = required_positional_params
         if optional_positional_params:
             res += f"[{optional_positional_params}]"
 

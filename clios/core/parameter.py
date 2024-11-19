@@ -287,8 +287,9 @@ class Parameters(tuple[Parameter, ...]):
 
     def iter_inputs(self) -> t.Generator[Parameter, None, None]:
         """Iterate over input arguments"""
-        for param in self.inputs:
-            yield param
+        for param in self:
+            if param.is_input and not param.is_var_input:
+                yield param
         while self.var_input is not None:
             yield self.var_input
 
@@ -333,22 +334,17 @@ class Parameters(tuple[Parameter, ...]):
         return None
 
     @cached_property
-    def inputs(self) -> tuple[Parameter, ...]:
-        """Get a tuple of input parameters"""
-        params = [param for param in self if param.is_input and not param.is_var_input]
-        return tuple(params)
-
-    @cached_property
-    def num_inputs(self) -> int:
-        """Get the number of input parameters"""
-        if self.var_input is not None:
-            return -1
-        return len(self.inputs)
+    def num_minimum_inputs(self) -> int:
+        """Get the number of minimum required input parameters"""
+        return len([param for param in self if param.is_input])
 
     @cached_property
     def input_present(self) -> int:
         """Check if there is any input parameter"""
-        return not self.num_inputs == 0
+        for param in self:
+            if param.is_input:
+                return True
+        return False
 
     @cached_property
     def var_input(self) -> Parameter | None:

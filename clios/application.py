@@ -10,8 +10,8 @@ from .cli import print_detail, print_list
 from .cli.cli_parser import ASTBuilder
 from .cli.tokenizer import tokenize
 from .core.param_info import Input
+from .core.registry import OperatorRegistry
 from .core.utils import Implicit, get_operator_fn
-from .registry import OperatorRegistry
 
 
 def output(input: Annotated[Any, Input()]) -> None:

@@ -10,10 +10,7 @@ from .operator_fn import OperatorFn
 
 
 @dataclass(frozen=True)
-class BaseOperator(ABC):
-    name: str
-    index: int
-
+class OperatorAbc(ABC):
     @abstractmethod
     def execute(self) -> Any: ...
 
@@ -22,7 +19,9 @@ class BaseOperator(ABC):
 
 
 @dataclass(frozen=True)
-class SimpleOperator(BaseOperator):
+class SimpleOperator(OperatorAbc):
+    name: str
+    index: int
     fn: Callable[[Any], Any]
     input_: Any
 
@@ -34,7 +33,9 @@ class SimpleOperator(BaseOperator):
 
 
 @dataclass(frozen=True)
-class LeafOperator(BaseOperator):
+class BaseOperator(OperatorAbc):
+    name: str
+    index: int
     operator_fn: OperatorFn
     args: tuple[Any, ...] = ()
     kwds: tuple[tuple[str, Any], ...] = ()
@@ -91,8 +92,15 @@ class LeafOperator(BaseOperator):
 
 
 @dataclass(frozen=True)
-class Operator(LeafOperator):
-    inputs: tuple[BaseOperator, ...] = ()
+class LeafOperator(BaseOperator):
+    pass
+
+
+@dataclass(frozen=True)
+class Operator(BaseOperator):
+    name: str
+    index: int
+    inputs: tuple[OperatorAbc, ...] = ()
 
     def _validate_execute_inputs(self) -> list[Any]:
         input_values: list[Any] = []
@@ -136,22 +144,17 @@ class Operator(LeafOperator):
 
 
 @dataclass(frozen=True)
-class RootOperator:
+class RootOperator(OperatorAbc):
     input: BaseOperator
-    file_saver: Callable[[Any, str], None] | None = None
+    callback: Callable[..., None] | None = None
     args: tuple[str, ...] = ()
-    return_value: bool = False
 
     def execute(self) -> Any:
         value = self.input.execute()
-        if self.return_value or value is None:
-            return value
-        assert self.file_saver is not None
-        self.file_saver(value, *self.args)
+        assert self.callback is not None
+        return self.callback(value, *self.args)
 
     def draw(self) -> str:
-        if self.file_saver is None:
-            return self.input.draw()
         res = ",".join(self.args)
         res += f" [ {self.input.draw()} ]"
         return res
