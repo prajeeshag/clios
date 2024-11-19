@@ -1,14 +1,18 @@
 import re
+import typing as t
 from dataclasses import dataclass
 
 from pydantic import ValidationError
 
-from clios.core.operator_parser import OprParserAbc, OprParserError, ParamVal
+from clios.core.param_parser import (
+    ParamParserAbc,
+    ParamParserError,
+)
 from clios.core.parameter import Parameters
 
 
 @dataclass(frozen=True)
-class CliOprParser(OprParserAbc):
+class CliParamParser(ParamParserAbc):
     arg_sep: str = ","
     kw_sep: str = "="
     """
@@ -20,18 +24,15 @@ class CliOprParser(OprParserAbc):
         parse("a,b,c,d=1,e=2") -> (args=("a", "b", "c", "d", "e"), kwds=(KWd("d", "1"), KWd("e", "2")))
     """
 
-    def get_name(self, string: str) -> str:
-        return string.split(self.arg_sep)[0].strip("-")
-
     def parse_arguments(
         self,
         string: str,
         parameters: Parameters,
-    ) -> tuple[ParamVal, ...]:
+    ) -> tuple[tuple[t.Any, ...], tuple[tuple[str, t.Any], ...]]:
         arg_list = list(string.split(self.arg_sep))
 
-        arg_values: list[ParamVal] = []
-        kwd_values: list[ParamVal] = []
+        arg_values: list[t.Any] = []
+        kwd_values: dict[str, t.Any] = {}
 
         positional_arg_iter = parameters.iter_positional_arguments()
 
@@ -48,8 +49,8 @@ class CliOprParser(OprParserAbc):
             kwd = self.get_keyword(arg)
             if kwd is not None:
                 k, v = kwd
-                if k in [p.key for p in kwd_values]:
-                    raise OprParserError(
+                if k in kwd_values:
+                    raise ParamParserError(
                         f"Duplicate keyword argument `{k}`!",
                         string,
                         spos=spos,
@@ -58,7 +59,7 @@ class CliOprParser(OprParserAbc):
                 try:
                     param_name = parameters.get_keyword_argument(k)
                 except KeyError:
-                    raise OprParserError(
+                    raise ParamParserError(
                         f"Unknown keyword argument `{k}`!",
                         string,
                         spos=spos,
@@ -67,17 +68,17 @@ class CliOprParser(OprParserAbc):
                 try:
                     value = param_name.build_phase_validator.validate_python(v)
                 except ValidationError as e:
-                    raise OprParserError(
+                    raise ParamParserError(
                         f"Data validation failed for argument `{k}`!",
                         string,
                         spos=spos,
                         epos=epos,
                         ctx={"validation_error": e},
                     )
-                kwd_values.append(ParamVal(val=value, key=k))
+                kwd_values[k] = value
             else:
                 if len(kwd_values) > 0:
-                    raise OprParserError(
+                    raise ParamParserError(
                         "Positional argument after keyword argument is not allowed!",
                         string,
                         spos=spos,
@@ -86,7 +87,7 @@ class CliOprParser(OprParserAbc):
                 try:
                     param_name = next(positional_arg_iter)
                 except StopIteration:
-                    raise OprParserError(
+                    raise ParamParserError(
                         f"Too many arguments: expected {len(arg_values)} argument(s)!",
                         string,
                         spos=spos,
@@ -95,34 +96,33 @@ class CliOprParser(OprParserAbc):
                 try:
                     value = param_name.build_phase_validator.validate_python(arg)
                 except ValidationError as e:
-                    raise OprParserError(
+                    raise ParamParserError(
                         "Data validation failed for argument!",
                         string,
                         spos=spos,
                         epos=epos,
                         ctx={"validation_error": e},
                     )
-                arg_values.append(ParamVal(val=value))
+                arg_values.append(value)
 
         if len(arg_values) < parameters.num_required_args:
-            raise OprParserError(
+            raise ParamParserError(
                 f"Missing arguments: expected atleast {parameters.num_required_args}, got {len(arg_values)} argument(s)!",
                 string,
                 spos=spos,
                 epos=epos,
             )
 
-        kwd_keys = [p.key for p in kwd_values]
         for param_name in parameters.required_keywords.keys():
-            if param_name not in kwd_keys:
-                raise OprParserError(
+            if param_name not in kwd_values:
+                raise ParamParserError(
                     f"Missing required keyword argument `{param_name}`!",
                     string,
                     spos=spos,
                     epos=epos,
                 )
 
-        return tuple([*arg_values, *kwd_values])
+        return tuple(arg_values), tuple(kwd_values.items())
 
     def get_keyword(self, string: str) -> tuple[str, str] | None:
         """split the string into key and value"""

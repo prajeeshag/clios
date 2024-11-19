@@ -7,7 +7,7 @@ from rich import print
 from clios.core.operator import RootOperator
 
 from .cli import print_detail, print_list
-from .cli.ast_builder import ASTBuilder
+from .cli.cli_parser import ASTBuilder
 from .cli.tokenizer import tokenize
 from .core.param_info import Input
 from .core.utils import Implicit, get_operator_fn

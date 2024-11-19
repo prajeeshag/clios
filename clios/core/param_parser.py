@@ -2,10 +2,10 @@ import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from .parameter import Parameters, ParamVal
+from .parameter import Parameters
 
 
-class OprParserError(Exception):
+class ParamParserError(Exception):
     def __init__(
         self,
         message: str,
@@ -32,30 +32,15 @@ class OprParserError(Exception):
 
 
 @dataclass(frozen=True)
-class OprParserAbc(ABC):
+class ParamParserAbc(ABC):
     """
     An abstract class to represent an operator argument parser
     """
 
     @abstractmethod
-    def get_name(self, string: str) -> str:
-        """
-        Get the name of the operator from the string
-
-        Args:
-            string (str): The string to get the operator name from
-
-        Returns:
-            str: The name of the operator
-
-        Raises:
-            OprParserError: If the operator name is invalid
-        """
-
-    @abstractmethod
     def parse_arguments(
         self, string: str, parameters: Parameters
-    ) -> tuple[ParamVal, ...]:
+    ) -> tuple[tuple[t.Any, ...], tuple[tuple[str, t.Any], ...]]:
         """
         Parse a parameter string into args and kwds
 

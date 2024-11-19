@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from docstring_parser import parse as parse_docstring  # type: ignore
 
-from .operator_parser import OprParserAbc
+from .param_parser import ParamParserAbc
 from .parameter import Parameter, Parameters, ReturnValue
 from .utils import get_output_info, get_typed_signature
 
@@ -18,7 +18,7 @@ class OperatorFn:
     parameters: Parameters
     output: ReturnValue
     callback: t.Callable[..., t.Any]
-    param_parser: OprParserAbc
+    param_parser: ParamParserAbc
 
     @property
     def short_description(self):
@@ -38,7 +38,7 @@ class OperatorFn:
     def validate(
         cls,
         func: t.Callable[..., t.Any],
-        arg_parser: OprParserAbc,
+        arg_parser: ParamParserAbc,
         implicit: Implicit = "input",
     ) -> "OperatorFn":
         signature = get_typed_signature(func)
