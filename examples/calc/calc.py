@@ -50,7 +50,7 @@ def file_writer(content: Any, file_path: str) -> None:
         f.write(json.dumps(content))
 
 
-floatOutput = Annotated[list[float], Output(file_saver=file_writer)]
+floatOutput = Annotated[list[float], Output(callback=file_writer)]
 
 
 @app.operator(name="range", implicit="param")

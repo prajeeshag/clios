@@ -56,13 +56,12 @@ class ParamParserAbc(ABC):
         """
 
     @abstractmethod
-    def get_synopsis(self, parameters: Parameters, name: str) -> str:
+    def get_synopsis(self, parameters: Parameters) -> str:
         """
         Get the synopsis of the operator arguments
 
         Args:
             parameters: The list of parameters to get the synopsis for
-            name (str): The name of the
 
         Returns:
             str: The synopsis of the operator arguments
