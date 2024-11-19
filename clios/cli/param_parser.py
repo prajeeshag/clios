@@ -37,22 +37,21 @@ class CliParamParser(ParamParserAbc):
         positional_arg_iter = parameters.iter_positional_arguments()
 
         arg_list.reverse()
-        name = arg_list.pop()  # remove the operator name
 
         spos = 0
-        epos = len(name)
+        epos = -1
         while len(arg_list) > 0:
             arg = arg_list.pop()
             spos = epos + 1
             epos = spos + len(arg)
-
+            if not arg:
+                continue
             kwd = self.get_keyword(arg)
             if kwd is not None:
                 k, v = kwd
                 if k in kwd_values:
                     raise ParamParserError(
                         f"Duplicate keyword argument `{k}`!",
-                        string,
                         spos=spos,
                         epos=epos,
                     )
@@ -61,7 +60,6 @@ class CliParamParser(ParamParserAbc):
                 except KeyError:
                     raise ParamParserError(
                         f"Unknown keyword argument `{k}`!",
-                        string,
                         spos=spos,
                         epos=epos,
                     )
@@ -73,7 +71,7 @@ class CliParamParser(ParamParserAbc):
                         string,
                         spos=spos,
                         epos=epos,
-                        ctx={"validation_error": e},
+                        ctx={"error": e},
                     )
                 kwd_values[k] = value
             else:
@@ -89,7 +87,6 @@ class CliParamParser(ParamParserAbc):
                 except StopIteration:
                     raise ParamParserError(
                         f"Too many arguments: expected {len(arg_values)} argument(s)!",
-                        string,
                         spos=spos,
                         epos=epos,
                     )
@@ -98,17 +95,15 @@ class CliParamParser(ParamParserAbc):
                 except ValidationError as e:
                     raise ParamParserError(
                         "Data validation failed for argument!",
-                        string,
                         spos=spos,
                         epos=epos,
-                        ctx={"validation_error": e},
+                        ctx={"error": e},
                     )
                 arg_values.append(value)
 
         if len(arg_values) < parameters.num_required_args:
             raise ParamParserError(
                 f"Missing arguments: expected atleast {parameters.num_required_args}, got {len(arg_values)} argument(s)!",
-                string,
                 spos=spos,
                 epos=epos,
             )
@@ -117,7 +112,6 @@ class CliParamParser(ParamParserAbc):
             if param_name not in kwd_values:
                 raise ParamParserError(
                     f"Missing required keyword argument `{param_name}`!",
-                    string,
                     spos=spos,
                     epos=epos,
                 )
@@ -170,7 +164,7 @@ class CliParamParser(ParamParserAbc):
 
         if optional_keyword_params:
             res += f"[{optional_keyword_params}]"
-
+        res = res.strip(self.arg_sep)
         return res
 
 

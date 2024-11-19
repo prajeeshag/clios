@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from enum import Enum
 
@@ -19,7 +20,8 @@ class OperatorToken(Token):
 
     @classmethod
     def match(cls, string: str) -> bool:
-        return string.startswith("-") and not string.startswith("--")
+        pattern = r"^-[a-zA-Z]"
+        return re.match(pattern, string) is not None
 
 
 @dataclass(frozen=True)

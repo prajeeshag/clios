@@ -93,91 +93,82 @@ def op_1i1k1o(i: intIn, *, ip: intParam) -> intOut:
 invalid_operators = [
     [
         [
-            "op_1i,1",
+            "1",
             op_1i,
         ],
-        ParserError(
-            "Too many arguments: expected 0 argument(s)!", "op_1i,1", spos=6, epos=7
-        ),
+        ParserError("Too many arguments: expected 0 argument(s)!", spos=0, epos=1),
     ],
     [
         [
-            "op_1i,a=1",
+            "a=1",
             op_1i,
         ],
-        ParserError("Unknown keyword argument `a`!", "op_1i,a=1", spos=6, epos=9),
+        ParserError("Unknown keyword argument `a`!", spos=0, epos=3),
     ],
     [
         [
-            "op_1i1k,ip=1,a=1",
+            "ip=1,a=1",
             op_1i1k,
         ],
-        ParserError(
-            "Unknown keyword argument `a`!", "op_1i1k,ip=1,a=1", spos=13, epos=16
-        ),
+        ParserError("Unknown keyword argument `a`!", spos=5, epos=8),
     ],
     [
         [
-            "op_1i1k,ip=1,ip=1",
+            "ip=1,ip=1",
             op_1i1k,
         ],
-        ParserError(
-            "Duplicate keyword argument `ip`!", "op_1i1k,ip=1,ip=1", spos=13, epos=17
-        ),
+        ParserError("Duplicate keyword argument `ip`!", spos=5, epos=9),
     ],
     [
         [
-            "op_1i1k,ip=1,1",
+            "ip=1,1",
             op_1i1k,
         ],
         ParserError(
             "Positional argument after keyword argument is not allowed!",
-            "op_1i1k,ip=1,1",
-            spos=13,
-            epos=14,
+            spos=5,
+            epos=6,
         ),
     ],
     [
         [
-            "op_1i1k",
+            "",
             op_1i1k,
         ],
-        ParserError(
-            "Missing required keyword argument `ip`!", "op_1i1k", spos=0, epos=7
-        ),
+        ParserError("Missing required keyword argument `ip`!", spos=0, epos=0),
     ],
     [
         [
-            "op_1i1p",
+            "",
             op_1i1p,
         ],
         ParserError(
             "Missing arguments: expected atleast 1, got 0 argument(s)!",
             spos=0,
-            epos=7,
+            epos=0,
         ),
     ],
     [
         [
-            "op_1i1p,1,2",
+            "1,2",
             op_1i1p,
         ],
         ParserError(
             "Too many arguments: expected 1 argument(s)!",
-            spos=10,
-            epos=11,
+            spos=2,
+            epos=3,
         ),
     ],
 ]
 
-build_validation_error = [
+build_error = [
     [
-        ["op_1p,a", op_1p],
-        ParserError("Data validation failed for argument!", spos=6, epos=7),
+        ["a", op_1p],
+        ParserError("Data validation failed for argument!", spos=0, epos=1),
     ],
     [
-        ["op_1k,ip=a", op_1k],
-        ParserError("Data validation failed for argument `ip`!", spos=6, epos=10),
+        ["ip=a", op_1k],
+        ParserError("Data validation failed for argument `ip`!", spos=0, epos=4),
     ],
 ]
 
@@ -194,8 +185,8 @@ def test_parse_arguments(input, expected):
     assert e.value.epos == expected.epos
 
 
-@pytest.mark.parametrize("input,expected", build_validation_error)
-def test_parse_arguments_build_validation_error(input, expected):
+@pytest.mark.parametrize("input,expected", build_error)
+def test_parse_arguments_build_error(input, expected):
     parser = CliParamParser()
     parameters = OperatorFn.validate(input[1], parser).parameters
 
@@ -205,22 +196,22 @@ def test_parse_arguments_build_validation_error(input, expected):
     assert str(e.value) == str(expected)
     assert e.value.spos == expected.spos
     assert e.value.epos == expected.epos
-    assert isinstance(e.value.ctx["validation_error"], ValidationError)
-
-
-def test_get_name():
-    parser = CliParamParser()
-    assert parser.get_name("op_1i1p,1,2") == "op_1i1p"
+    assert isinstance(e.value.ctx["error"], ValidationError)
 
 
 def test_valid():
     parser = CliParamParser()
     parameters = OperatorFn.validate(op_1p1k, parser, implicit="param").parameters
-    param_values = parser.parse_arguments("op_1p1k,1,ik=1", parameters)
-    assert param_values[0].val == 1
-    assert param_values[0].key == ""
-    assert param_values[1].val == 1
-    assert param_values[1].key == "ik"
+    param_values = parser.parse_arguments("1,ik=1", parameters)
+    assert param_values[0] == (1,)
+    assert param_values[1] == (("ik", 1),)
+
+
+def test_valid_single():
+    parser = CliParamParser()
+    parameters = OperatorFn.validate(op_1i1p1o, parser).parameters
+    param_values = parser.parse_arguments("1", parameters)
+    assert param_values[0] == (1,)
 
 
 def test_get_synopsis():
@@ -237,11 +228,6 @@ def test_get_synopsis():
     ) -> int:
         pass
 
-    expected = ",p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]"
+    expected = "p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]"
     parameters = OperatorFn.validate(fn, parser).parameters
-    assert parser.get_synopsis(parameters, "") == expected
-
-
-# def test_return_empty(parser):
-#     op = parser.parse_tokens([])
-#     assert isinstance(op, _Empty)
+    assert parser.get_synopsis(parameters) == expected

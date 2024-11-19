@@ -2,10 +2,12 @@
 import typing as t
 
 import pytest
+from pydantic import ValidationError
 
 from clios.cli.main_parser import CliParser, ParserError
-from clios.cli.param_parser import CliParamParser
+from clios.cli.param_parser import CliParamParser, ParamParserError
 from clios.cli.tokenizer import CliTokenizer
+from clios.core.operator import RootOperator
 from clios.core.operator_fn import OperatorFn
 from clios.core.param_info import Input, Output, Param
 from clios.core.registry import OperatorRegistry
@@ -198,6 +200,27 @@ invalids = [
         ["op_1i"],
         ParserError("Missing inputs for operator op_1i!", ctx={"token_index": 0}),
     ],
+    [
+        [],
+        ParserError("Input is empty!"),
+    ],
+]
+
+validation_errors = [
+    [
+        ["op_1i", "op_1o"],
+        ParserError("Data validation failed for input op_1o!", ctx={"token_index": 1}),
+        ValidationError,
+    ],
+    [
+        [
+            "op_1p",
+        ],
+        ParserError(
+            "Failed to parse arguments for operator `op_1p`!", ctx={"token_index": 0}
+        ),
+        ParamParserError,
+    ],
 ]
 
 
@@ -212,3 +235,46 @@ def test_get_operator_invalid(tokens, expected):
         parser.get_operator(tokens)
     assert str(e.value) == str(expected)
     assert e.value.ctx == expected.ctx
+
+
+@pytest.mark.parametrize("tokens, expected, error", validation_errors)
+def test_get_operator_validation_error(tokens, expected, error):
+    tokenizer = CliTokenizer()
+    parser = CliParser(
+        operator_fns=operator_fns,
+        tokenizer=tokenizer,
+    )
+    with pytest.raises(ParserError) as e:
+        parser.get_operator(tokens)
+    assert str(e.value) == str(expected)
+    assert e.value.ctx["token_index"] == expected.ctx["token_index"]
+    assert isinstance(e.value.ctx["error"], error)
+
+
+def test_get_synopsis():
+    tokenizer = CliTokenizer()
+    parser = CliParser(
+        operator_fns=operator_fns,
+        tokenizer=tokenizer,
+    )
+    assert parser.get_synopsis("op_1i1p1o") == "op_1i1p1o,ip i output"
+
+
+def test_get_synopsis_fail():
+    tokenizer = CliTokenizer()
+    parser = CliParser(
+        operator_fns=operator_fns,
+        tokenizer=tokenizer,
+    )
+    with pytest.raises(ParserError):
+        parser.get_synopsis("f2")
+
+
+def test_get_operator_passing():
+    tokenizer = CliTokenizer()
+    parser = CliParser(
+        operator_fns=operator_fns,
+        tokenizer=tokenizer,
+    )
+    operator = parser.get_operator(["-op_1i1p1o,1", "1", "output"])
+    assert isinstance(operator, RootOperator)

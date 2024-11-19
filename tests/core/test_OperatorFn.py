@@ -289,18 +289,11 @@ def test_Parameters_var_keyword():
     assert op1.parameters.var_keyword is None
 
 
-def test_Parameters_inputs():
-    op = OperatorFn.validate(fn, arg_parser=mock_arg_parser)
-    inputs = op.parameters.inputs
-    assert inputs[0].name == "in1"
-    assert inputs[1].name == "in2"
-
-
 def test_Parameters_num_inputs():
     op = OperatorFn.validate(fn, arg_parser=mock_arg_parser)
     op1 = OperatorFn.validate(fn, arg_parser=mock_arg_parser, implicit="param")
-    assert op.parameters.num_inputs == -1
-    assert op1.parameters.num_inputs == 1
+    assert op.parameters.num_minimum_inputs == 3
+    assert op1.parameters.num_minimum_inputs == 1
 
 
 def test_Parameters_input_present():

@@ -24,3 +24,9 @@ def test_set_key_exist():
     with pytest.raises(KeyExistsError) as e:
         reg.add("k", "object")
     assert str(e.value) == "Key 'k' already exists. Reassignment is not allowed."
+
+
+def test_items():
+    reg = Registry[str, str]()
+    reg.add("k", "object")
+    assert list(reg.items()) == [("k", "object")]
