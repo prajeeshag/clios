@@ -6,13 +6,13 @@ from pydantic import ValidationError
 
 from clios.exceptions import OperatorError
 
-from ..cli.tokenizer import Token
 from .operator_fn import OperatorFn
 
 
 @dataclass(frozen=True)
 class BaseOperator(ABC):
-    token: Token
+    name: str
+    index: int
 
     @abstractmethod
     def execute(self) -> Any: ...
@@ -24,13 +24,13 @@ class BaseOperator(ABC):
 @dataclass(frozen=True)
 class SimpleOperator(BaseOperator):
     fn: Callable[[Any], Any]
-    input: Any
+    input_: Any
 
     def execute(self) -> Any:
-        return self.fn(self.input)
+        return self.fn(self.input_)
 
     def draw(self) -> str:
-        return f"{self.token.value}"
+        return f"{self.name}"
 
 
 @dataclass(frozen=True)
@@ -41,33 +41,33 @@ class LeafOperator(BaseOperator):
 
     def _validate_arguments(self) -> list[Any]:
         arg_values: list[Any] = []
-        iter_args = self.operator_fn.iter_positional_arguments()
-        for i, val in enumerate(self.args):
+        iter_args = self.operator_fn.parameters.iter_positional_arguments()
+        for val in self.args:
             param = next(iter_args)
             try:
-                arg_values.append(param.validate_execute(val))
+                arg_values.append(param.execute_phase_validator.validate_python(val))
             except ValidationError as e:
                 raise OperatorError(
-                    "Data validation error!",
-                    ctx={"token": self.token, "arg_index": i, "validation_error": e},
+                    f"""Data validation failed for argument `{param.name}` operator `{self.name}`!
+                    Error: {e}""",
                 )
         return arg_values
 
     def _validate_keywords(self) -> dict[str, Any]:
         arg_values: dict[str, Any] = {}
         for key, val in self.kwds.items():
-            param = self.operator_fn.get_keyword_argument(key)
+            param = self.operator_fn.parameters.get_keyword_argument(key)
             try:
-                arg_values[key] = param.validate_execute(val)
+                arg_values[key] = param.execute_phase_validator.validate_python(val)
             except ValidationError as e:
                 raise OperatorError(
-                    "Data validation error!",
-                    ctx={"token": self.token, "arg_key": key, "validation_error": e},
+                    f"""Data validation failed for argument `{param.name}` operator `{self.name}`!
+                    Error: {e}""",
                 )
         return arg_values
 
     def _compose_arg_values(self, args: list[Any], inputs: list[Any]) -> list[Any]:
-        iter_params = self.operator_fn.iter_positional()
+        iter_params = self.operator_fn.parameters.iter_positional()
         args_rev = list(args[::-1])
         inputs_rev = list(inputs[::-1])
         param_values: list[Any] = []
@@ -84,10 +84,10 @@ class LeafOperator(BaseOperator):
         arg_values = self._validate_arguments()
         kwds_values = self._validate_keywords()
         value = self.operator_fn.callback(*arg_values, **kwds_values)
-        return self.operator_fn.output.validate(value)
+        return self.operator_fn.output.validator.validate_python(value)
 
     def draw(self) -> str:
-        return f"{self.token.value}"
+        return f"{self.name}"
 
 
 @dataclass(frozen=True)
@@ -96,15 +96,18 @@ class Operator(LeafOperator):
 
     def _validate_execute_inputs(self) -> list[Any]:
         input_values: list[Any] = []
-        iter_inputs = self.operator_fn.iter_inputs()
+        iter_inputs = self.operator_fn.parameters.iter_inputs()
         for input_ in self.inputs:
             input_param = next(iter_inputs)
             try:
-                value = input_param.validate_execute(input_.execute())
+                value = input_param.execute_phase_validator.validate_python(
+                    input_.execute()
+                )
             except ValidationError as e:
                 raise OperatorError(
-                    "Data validation error!",
-                    ctx={"token": input_.token, "validation_error": e},
+                    f"Data validation failed for the input of operator `{self.name}`!\n"
+                    + f"Error: {e}\n"
+                    + "It's a bug! Please report it!",
                 )
             input_values.append(value)
         return input_values
@@ -115,10 +118,17 @@ class Operator(LeafOperator):
         input_values = self._validate_execute_inputs()
         positional_args = self._compose_arg_values(arg_values, input_values)
         value = self.operator_fn.callback(*positional_args, **kwds_values)
-        return self.operator_fn.output.validate(value)
+        try:
+            return self.operator_fn.output.validator.validate_python(value)
+        except ValidationError as e:
+            raise OperatorError(
+                f"Data validation failed for the output of operator `{self.name}`!\n"
+                + f"Error: {e}\n"
+                + "It's a bug! Please report it!",
+            )
 
     def draw(self) -> str:
-        res = f"{self.token.value} [ "
+        res = f"{self.name} [ "
         for input_ in self.inputs:
             res += f"{input_.draw()} "
         res += "]"

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
 
-from pydantic import BeforeValidator, Strict, TypeAdapter
+from pydantic import BeforeValidator, ConfigDict, PydanticUserError, Strict, TypeAdapter
 from pydantic.functional_validators import AfterValidator, PlainValidator, WrapValidator
 from typing_extensions import Doc
 
@@ -35,7 +35,12 @@ def _init_validator(
     if info.strict and _get_type(annotation) is not t.Any:
         annotation = t.Annotated[annotation, Strict()]
 
-    return TypeAdapter(annotation)
+    try:
+        return TypeAdapter(annotation, config=ConfigDict(arbitrary_types_allowed=True))
+    except PydanticUserError as e:
+        if e.code == "type-adapter-config-unused":
+            return TypeAdapter(annotation)
+        raise
 
 
 def _get_description(annotation: t.Any) -> str:
@@ -252,7 +257,9 @@ class ReturnValue:
                 if metadata:
                     annotation = t.Annotated[type_, *metadata]
             annotation = t.Annotated[annotation, Strict()]
-            type_adapter: TypeAdapter[t.Any] = TypeAdapter(annotation)
+            type_adapter: TypeAdapter[t.Any] = TypeAdapter(
+                annotation, config=ConfigDict(arbitrary_types_allowed=True)
+            )
         return cls(type_adapter, annotation, info)
 
     @property
@@ -262,7 +269,7 @@ class ReturnValue:
 
 class Parameters(tuple[Parameter, ...]):
     @cached_property
-    def required_kwds(self) -> dict[str, Parameter]:
+    def required_keywords(self) -> dict[str, Parameter]:
         """Get a dictionary of required keyword arguments"""
         return {
             param.name: param
@@ -307,7 +314,7 @@ class Parameters(tuple[Parameter, ...]):
                     return param
         if self.var_keyword is not None:
             return self.var_keyword
-        raise KeyError(f"Unexpected keyword argument: {key}")
+        raise KeyError(f"Unknown keyword argument: {key}")
 
     @cached_property
     def var_argument(self) -> Parameter | None:
