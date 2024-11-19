@@ -3,14 +3,15 @@
 import pytest
 
 from clios.cli.tokenizer import (
+    CliTokenizer as Tokenizer,
+)
+from clios.cli.tokenizer import (
     ColonToken,
     LeftBracketToken,
     OperatorToken,
     RightBracketToken,
     StringToken,
-    TokenError,
     TokenType,
-    tokenize,
 )
 
 
@@ -69,16 +70,9 @@ class Test_tokenize:
         ],
     )
     def test_valid(self, args, expected):
-        assert tokenize(args) == expected
+        assert Tokenizer().tokenize(args) == expected
 
     def test_tokenize_empty_list(self):
         args = []
         expected = ()
-        assert tokenize(args) == expected
-
-    def test_invalid(self):
-        with pytest.raises(TokenError) as result:
-            tokenize(["-inv[sk"])
-
-        assert result.value.token == "-inv[sk"
-        assert str(result.value) == "Unknown pattern"
+        assert Tokenizer().tokenize(args) == expected

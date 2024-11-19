@@ -38,7 +38,7 @@ class CliParser(ParserAbc):
         **kwargs: t.Any,
     ) -> RootOperator:
         if not input:
-            raise ParserError("No tokens found!")
+            raise ParserError("Input is empty!")
         tokens = list(self.tokenizer.tokenize(input))
         num_tokens = len(tokens)
         token = tokens.pop(0)
@@ -126,7 +126,7 @@ class CliParser(ParserAbc):
         except ParamParserError as e:
             raise ParserError(
                 f"Failed to parse arguments for operator `{operator_name}`!",
-                ctx={"param_parser_error": e, "token_index": token_index},
+                ctx={"error": e, "token_index": token_index},
             )
 
         if not operator_fn.parameters.input_present:
@@ -177,7 +177,7 @@ class CliParser(ParserAbc):
                 except ValidationError as e:
                     raise ParserError(
                         f"Data validation failed for input {child_token.value}!",
-                        ctx={"validation_error": e, "token_index": child_index},
+                        ctx={"error": e, "token_index": child_index},
                     )
                 child_operators.append(
                     SimpleOperator(

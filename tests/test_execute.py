@@ -112,7 +112,7 @@
 #     return ASTBuilder(operators)
 
 
-# execute_validation_error = [
+# execute_error = [
 #     [
 #         [Ot("op_1P,a")],
 #         {
@@ -139,14 +139,14 @@
 # ]
 
 
-# @pytest.mark.parametrize("input,expected", execute_validation_error)
-# def test_validation_error(parser, input, expected):
+# @pytest.mark.parametrize("input,expected", execute_error)
+# def test_error(parser, input, expected):
 #     op = parser.parse_tokens(input)
 #     with pytest.raises(OperatorError) as e:
 #         op.execute()
 #     assert str(e.value) == expected["error_type"]
 #     assert e.value.ctx["token"] == expected["token"]
-#     assert isinstance(e.value.ctx["validation_error"], ValidationError)
+#     assert isinstance(e.value.ctx["error"], ValidationError)
 #     if "arg_index" in expected:
 #         assert e.value.ctx["arg_index"] == expected["arg_index"]
 #     elif "arg_key" in expected:
