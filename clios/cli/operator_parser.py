@@ -163,7 +163,7 @@ class CliOprParser(OprParserAbc):
                 optional_keyword_params += f"{self.arg_sep}**{param.name}"
 
         res = name
-        res = required_positional_params
+        res += required_positional_params
         if optional_positional_params:
             res += f"[{optional_positional_params}]"
 
