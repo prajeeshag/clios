@@ -38,7 +38,7 @@ class OperatorFn:
     def validate(
         cls,
         func: t.Callable[..., t.Any],
-        arg_parser: ParamParserAbc,
+        param_parser: ParamParserAbc,
         implicit: Implicit = "input",
     ) -> "OperatorFn":
         signature = get_typed_signature(func)
@@ -51,5 +51,5 @@ class OperatorFn:
             parameters=Parameters(parameter_list),
             output=ReturnValue.validate(return_annotation, output_info),
             callback=func,
-            param_parser=arg_parser,
+            param_parser=param_parser,
         )

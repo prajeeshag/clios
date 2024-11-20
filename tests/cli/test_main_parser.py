@@ -116,7 +116,7 @@ ops = {
 operator_fns = OperatorRegistry()
 param_parser = CliParamParser()
 for name, op in ops.items():
-    operator_fns.add(name, OperatorFn.validate(op, arg_parser=param_parser))
+    operator_fns.add(name, OperatorFn.validate(op, param_parser=param_parser))
 
 
 invalids = [
@@ -228,11 +228,10 @@ validation_errors = [
 def test_get_operator_invalid(tokens, expected):
     tokenizer = CliTokenizer()
     parser = CliParser(
-        operator_fns=operator_fns,
         tokenizer=tokenizer,
     )
     with pytest.raises(ParserError) as e:
-        parser.get_operator(tokens)
+        parser.get_operator(operator_fns, tokens)
     assert str(e.value) == str(expected)
     assert e.value.ctx == expected.ctx
 
@@ -241,40 +240,29 @@ def test_get_operator_invalid(tokens, expected):
 def test_get_operator_validation_error(tokens, expected, error):
     tokenizer = CliTokenizer()
     parser = CliParser(
-        operator_fns=operator_fns,
         tokenizer=tokenizer,
     )
     with pytest.raises(ParserError) as e:
-        parser.get_operator(tokens)
-    assert str(e.value) == str(expected)
+        parser.get_operator(operator_fns, tokens)
+    assert e.value.message == expected.message
     assert e.value.ctx["token_index"] == expected.ctx["token_index"]
     assert isinstance(e.value.ctx["error"], error)
+    assert expected.message in str(e.value)
 
 
 def test_get_synopsis():
     tokenizer = CliTokenizer()
     parser = CliParser(
-        operator_fns=operator_fns,
         tokenizer=tokenizer,
     )
-    assert parser.get_synopsis("op_1i1p1o") == "op_1i1p1o,ip i output"
-
-
-def test_get_synopsis_fail():
-    tokenizer = CliTokenizer()
-    parser = CliParser(
-        operator_fns=operator_fns,
-        tokenizer=tokenizer,
-    )
-    with pytest.raises(ParserError):
-        parser.get_synopsis("f2")
+    op_fn = operator_fns.get("op_1i1p1o")
+    assert parser.get_synopsis(op_fn, "operator") == "operator,ip i output"
 
 
 def test_get_operator_passing():
     tokenizer = CliTokenizer()
     parser = CliParser(
-        operator_fns=operator_fns,
         tokenizer=tokenizer,
     )
-    operator = parser.get_operator(["-op_1i1p1o,1", "1", "output"])
+    operator = parser.get_operator(operator_fns, ["-op_1i1p1o,1", "1", "output"])
     assert isinstance(operator, RootOperator)

@@ -51,23 +51,6 @@ def _get_description(annotation: t.Any) -> str:
     return ""
 
 
-type_to_str = {
-    int: "int",
-    float: "float",
-    str: "text",
-    bool: "bool",
-}
-
-
-class ParamDoc(t.NamedTuple):
-    """A named tuple to represent the documentation of a parameter"""
-
-    repr: str
-    type_: str = "text"
-    default: str = ""
-    description: str = ""
-
-
 class ParameterKind(Enum):
     # POSITIONAL_OR_KEYWORD is as POSITIONAL_ONLY
     POSITIONAL_ONLY = i.Parameter.POSITIONAL_ONLY
@@ -84,8 +67,7 @@ class ParameterKind(Enum):
 
 @dataclass(frozen=True)
 class _Empty:
-    def __str__(self) -> str:
-        return ""
+    pass
 
 
 @dataclass
@@ -105,8 +87,8 @@ class Parameter:
     annotation: t.Any
     build_phase_validator: TypeAdapter[t.Any]
     execute_phase_validator: TypeAdapter[t.Any]
-    default: t.Any = empty
-    description: str = ""
+    description: str
+    default: t.Any
 
     @classmethod
     def validate(cls, param: i.Parameter, implicit: str) -> "Parameter":

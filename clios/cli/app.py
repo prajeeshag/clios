@@ -1,17 +1,15 @@
 import sys
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any, Callable, Literal
 
 import click
 from rich import print
 
-from clios.core.operator import RootOperator
-
-from .cli import print_detail, print_list
-from .cli.cli_parser import ASTBuilder
-from .cli.tokenizer import tokenize
-from .core.param_info import Input
-from .core.registry import OperatorRegistry
-from .core.utils import Implicit, get_operator_fn
+from ..core.operator_fn import OperatorFn
+from ..core.param_info import Input
+from ..core.registry import OperatorRegistry
+from .main_parser import CliParser
+from .param_parser import CliParamParser
+from .presenter import CliPresenter
 
 
 def output(input: Annotated[Any, Input()]) -> None:
@@ -34,27 +32,39 @@ def _click_app(ctx: Any, **kwargs: Any) -> tuple[list[str], dict[str, Any]]:
     return ctx.args, kwargs
 
 
+default_param_parser = CliParamParser()
+
+
 class Clios:
     def __init__(self) -> None:
         self.operators = OperatorRegistry()
-        self.operators.add("print", get_operator_fn(output))
+        self.parser = CliParser()
+        self.operators.add(
+            "print",
+            OperatorFn.validate(
+                output,
+                param_parser=default_param_parser,
+            ),
+        )
+        self.presenter = CliPresenter(self.operators, self.parser)
 
-    def operator(self, name: str = "", implicit: Implicit = "input") -> Any:
+    def operator(
+        self,
+        name: str = "",
+        param_parser: CliParamParser = default_param_parser,
+        implicit: Literal["input", "param"] = "input",
+    ) -> Any:
         def decorator(func: Callable[..., Any]):
-            op_obj = get_operator_fn(func, implicit)
+            op_obj = OperatorFn.validate(
+                func,
+                param_parser=param_parser,
+                implicit=implicit,
+            )
             key = name if name else func.__name__
             self.operators.add(key, op_obj)
             return func
 
         return decorator
-
-    def run(self, argv: list[str]) -> Any:
-        tokens = tokenize(argv)
-        ast_builder = ASTBuilder(self.operators)
-        operator = ast_builder.parse_tokens(tokens)
-        if not isinstance(operator, RootOperator):
-            return
-        return operator.execute()
 
     def __call__(self) -> Any:
         try:
@@ -62,14 +72,17 @@ class Clios:
         except click.exceptions.UsageError as e:
             print(e.format_message())
             sys.exit(1)
+
         if options["list"]:
-            return print_list(self.operators)
+            return self.presenter.print_list()
         if options["show"] is not None:
-            return print_detail(options["show"], self.operators.get(options["show"]))
+            return self.presenter.print_detail(options["show"])
+        if options["dry_run"]:
+            return self.presenter.dry_run(args)
         if args:
-            return self.run(args)
+            return self.presenter.run(args)
 
         with click.Context(_click_app) as ctx:
             click.echo(_click_app.get_help(ctx))
 
-        print_list(self.operators)
+        # self.presenter.print_list()

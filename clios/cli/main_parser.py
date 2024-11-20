@@ -17,13 +17,16 @@ from clios.core.param_parser import ParamParserError
 from clios.core.registry import OperatorRegistry
 from clios.core.tokenizer import Token
 
-from .tokenizer import OperatorToken, StringToken, Tokenizer
+from .tokenizer import CliTokenizer, OperatorToken, StringToken, Tokenizer
+
+
+def simple_callback(value: t.Any) -> t.Any:
+    return value
 
 
 @dataclass(frozen=True)
 class CliParser(ParserAbc):
-    operator_fns: OperatorRegistry
-    tokenizer: Tokenizer[list[str]]
+    tokenizer: Tokenizer[list[str]] = CliTokenizer()
 
     def get_name(self, string: str) -> str:
         return string.split(",")[0].strip("-")
@@ -33,8 +36,9 @@ class CliParser(ParserAbc):
 
     def get_operator(
         self,
+        operator_fns: OperatorRegistry,
         input: list[str],
-        callback: t.Callable[[t.Any], t.Any] | None = None,
+        callback: t.Callable[..., t.Any] = simple_callback,
         **kwargs: t.Any,
     ) -> RootOperator:
         if not input:
@@ -44,16 +48,16 @@ class CliParser(ParserAbc):
         token = tokens.pop(0)
         operator_name = self.get_name(token.value)
         param_string = self.get_param_string(token.value)
-        operator_fn = self._get_operator_fn(operator_name, 0)
+        operator_fn = self._get_operator_fn(operator_fns, operator_name, 0)
 
         num_outputs = 0
-        if callback is None and operator_fn.output.type_ is not None:
-            callback = operator_fn.output.info.callback
-            if callback is None:
+        if operator_fn.output.type_ is not None:
+            if operator_fn.output.info.callback is None:
                 raise ParserError(
                     f"Operator `{operator_name}` cannot be used as root operator!",
                     ctx={"token_index": 0},
                 )
+            callback = operator_fn.output.info.callback
             num_outputs = operator_fn.output.info.num_outputs
 
         output_file_paths: list[str] = []
@@ -65,7 +69,7 @@ class CliParser(ParserAbc):
                         "Output file path must be a string",
                         ctx={"token_index": num_tokens - 1 - i},
                     )
-                output_file_paths.append(str(output_token))
+                output_file_paths.append(str(output_token.value))
             except IndexError:
                 raise ParserError(
                     "Missing output(s)!", ctx={"token_index": num_tokens - 1 - i}
@@ -74,6 +78,7 @@ class CliParser(ParserAbc):
         tokens.reverse()
 
         operator = self._get_operator(
+            operator_fns=operator_fns,
             operator_name=operator_name,
             param_string=param_string,
             operator_fn=operator_fn,
@@ -96,11 +101,8 @@ class CliParser(ParserAbc):
             args=tuple(output_file_paths),
         )
 
-    def get_synopsis(self, operator_name: str) -> str:
-        try:
-            op = self.operator_fns.get(operator_name)
-        except KeyError:
-            raise ParserError(f"Operator `{operator_name}` not found!")
+    def get_synopsis(self, operator_fn: OperatorFn, operator_name: str) -> str:
+        op = operator_fn
         param_synopsis = op.param_parser.get_synopsis(op.parameters)
         input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
         output_synopsis = " ".join(
@@ -112,6 +114,7 @@ class CliParser(ParserAbc):
 
     def _get_operator(
         self,
+        operator_fns: OperatorRegistry,
         operator_name: str,
         param_string: str,
         operator_fn: OperatorFn,
@@ -149,7 +152,9 @@ class CliParser(ParserAbc):
             if isinstance(child_token, OperatorToken):
                 child_op_name = self.get_name(child_token.value)
                 child_op_param_string = self.get_param_string(child_token.value)
-                child_op_fn = self._get_operator_fn(child_op_name, child_index)
+                child_op_fn = self._get_operator_fn(
+                    operator_fns, child_op_name, child_index
+                )
                 in_type = input_param.type_
                 if in_type is not t.Any and in_type != child_op_fn.output.type_:
                     raise ParserError(
@@ -161,6 +166,7 @@ class CliParser(ParserAbc):
                     )
                 num_tokens_before = len(input_tokens)
                 child_operator = self._get_operator(
+                    operator_fns=operator_fns,
                     operator_name=child_op_name,
                     param_string=child_op_param_string,
                     operator_fn=child_op_fn,
@@ -183,7 +189,6 @@ class CliParser(ParserAbc):
                     SimpleOperator(
                         name=child_token.value,
                         index=child_index,
-                        fn=input_param.execute_phase_validator.validate_python,
                         input_=value,
                     )
                 )
@@ -208,9 +213,11 @@ class CliParser(ParserAbc):
             kwds=kwds,
         )
 
-    def _get_operator_fn(self, name: str, index: int) -> OperatorFn:
+    def _get_operator_fn(
+        self, operator_fns: OperatorRegistry, name: str, index: int
+    ) -> OperatorFn:
         try:
-            op = self.operator_fns.get(name)
+            op = operator_fns.get(name)
         except KeyError:
             raise ParserError(
                 f"Operator `{name}` not found!", ctx={"token_index": index}

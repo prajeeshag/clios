@@ -5,14 +5,17 @@ from dataclasses import dataclass
 from .parameter import Parameters
 
 
+class ParamParserErrorCtx(t.TypedDict, total=False):
+    spos: int
+    epos: int
+    error: Exception
+
+
 class ParamParserError(Exception):
     def __init__(
         self,
         message: str,
-        string: str = "",
-        spos: int = -1,
-        epos: int = 0,
-        ctx: dict[str, t.Any] = {},
+        ctx: ParamParserErrorCtx = {},
     ) -> None:
         """
         An exception to represent an error in parsing operator arguments
@@ -24,11 +27,14 @@ class ParamParserError(Exception):
             epos (int): The end position of the error substring
         """
         self.message = message
-        self.string = string
-        self.spos = spos
-        self.epos = epos
         self.ctx = ctx
         super().__init__(self.message)
+
+    def __str__(self) -> str:
+        message = self.message
+        if "error" in self.ctx:
+            message += f"\n{str(self.ctx['error'])}"
+        return message
 
 
 @dataclass(frozen=True)

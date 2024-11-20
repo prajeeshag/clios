@@ -4,9 +4,20 @@ from typing import Any, Callable
 
 from pydantic import ValidationError
 
-from clios.exceptions import OperatorError
-
 from .operator_fn import OperatorFn
+
+
+class OperatorError(Exception):
+    def __init__(self, message: str, ctx: dict[str, Any] = {}) -> None:
+        self.message = message
+        self.ctx = ctx
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        message = self.message
+        if "error" in self.ctx:
+            message += f"\n{str(self.ctx['error'])}"
+        return message
 
 
 @dataclass(frozen=True)
@@ -22,14 +33,16 @@ class OperatorAbc(ABC):
 class SimpleOperator(OperatorAbc):
     name: str
     index: int
-    fn: Callable[[Any], Any]
     input_: Any
 
     def execute(self) -> Any:
-        return self.fn(self.input_)
+        return self.input_
 
     def draw(self) -> str:
-        return f"{self.name}"
+        return self.name
+
+    def __str__(self) -> str:
+        return self.name
 
 
 @dataclass(frozen=True)
@@ -45,12 +58,13 @@ class BaseOperator(OperatorAbc):
         iter_args = self.operator_fn.parameters.iter_positional_arguments()
         for val in self.args:
             param = next(iter_args)
+            print(self.name, param.name, val)
             try:
                 arg_values.append(param.execute_phase_validator.validate_python(val))
             except ValidationError as e:
                 raise OperatorError(
-                    f"""Data validation failed for argument `{param.name}` operator `{self.name}`!
-                    Error: {e}""",
+                    f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
+                    ctx={"error": e},
                 )
         return arg_values
 
@@ -62,8 +76,8 @@ class BaseOperator(OperatorAbc):
                 arg_values[key] = param.execute_phase_validator.validate_python(val)
             except ValidationError as e:
                 raise OperatorError(
-                    f"""Data validation failed for argument `{param.name}` operator `{self.name}`!
-                    Error: {e}""",
+                    f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
+                    ctx={"error": e},
                 )
         return arg_values
 
@@ -85,7 +99,14 @@ class BaseOperator(OperatorAbc):
         arg_values = self._validate_arguments()
         kwds_values = self._validate_keywords()
         value = self.operator_fn.callback(*arg_values, **kwds_values)
-        return self.operator_fn.output.validator.validate_python(value)
+        try:
+            return self.operator_fn.output.validator.validate_python(value)
+        except ValidationError as e:
+            raise OperatorError(
+                f"Data validation failed for the output of operator `{self.name}`!\n"
+                + f"Error: {e}\n"
+                + "It's a bug! Please report it!",
+            )
 
     def draw(self) -> str:
         return f"{self.name}"
@@ -113,9 +134,8 @@ class Operator(BaseOperator):
                 )
             except ValidationError as e:
                 raise OperatorError(
-                    f"Data validation failed for the input of operator `{self.name}`!\n"
-                    + f"Error: {e}\n"
-                    + "It's a bug! Please report it!",
+                    f"Data validation failed for the input of operator `{self.name}`!",
+                    ctx={"error": e},
                 )
             input_values.append(value)
         return input_values
@@ -146,15 +166,16 @@ class Operator(BaseOperator):
 @dataclass(frozen=True)
 class RootOperator(OperatorAbc):
     input: BaseOperator
-    callback: Callable[..., None] | None = None
+    callback: Callable[..., Any]
     args: tuple[str, ...] = ()
 
     def execute(self) -> Any:
         value = self.input.execute()
-        assert self.callback is not None
         return self.callback(value, *self.args)
 
     def draw(self) -> str:
         res = ",".join(self.args)
-        res += f" [ {self.input.draw()} ]"
+        if res:
+            res = f"{res} "
+        res += f"[ {self.input.draw()} ]"
         return res
