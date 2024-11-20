@@ -3,13 +3,22 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from .operator import RootOperator
+from .operator_fn import OperatorFn
+from .registry import OperatorRegistry
+
+
+class ParserErrorCtx(t.TypedDict, total=False):
+    token_index: int
+    num_extra_tokens: int
+    unchainable_token_index: int
+    error: Exception
 
 
 class ParserError(Exception):
     def __init__(
         self,
         message: str,
-        ctx: dict[str, t.Any] = {},
+        ctx: ParserErrorCtx = {},
     ) -> None:
         """
         An exception to represent an error in parsing operator arguments
@@ -19,11 +28,19 @@ class ParserError(Exception):
         self.ctx = ctx
         super().__init__(self.message)
 
+    def __str__(self) -> str:
+        message = self.message
+        if "error" in self.ctx:
+            message += f"\n{str(self.ctx['error'])}"
+        return message
+
 
 @dataclass(frozen=True)
 class ParserAbc(ABC):
     @abstractmethod
-    def get_operator(self, input: t.Any, **kwds: t.Any) -> RootOperator:
+    def get_operator(
+        self, operator_fns: OperatorRegistry, input: t.Any, **kwds: t.Any
+    ) -> RootOperator:
         """
         Parse the tokens and get the tree of operators
 
@@ -35,7 +52,7 @@ class ParserAbc(ABC):
         """
 
     @abstractmethod
-    def get_synopsis(self, operator_name: str) -> str:
+    def get_synopsis(self, operator_fn: OperatorFn, operator_name: str) -> str:
         """
         Get the synopsis of an operator
 

@@ -96,28 +96,30 @@ invalid_operators = [
             "1",
             op_1i,
         ],
-        ParserError("Too many arguments: expected 0 argument(s)!", spos=0, epos=1),
+        ParserError(
+            "Too many arguments: expected 0 argument(s)!", ctx={"spos": 0, "epos": 1}
+        ),
     ],
     [
         [
             "a=1",
             op_1i,
         ],
-        ParserError("Unknown keyword argument `a`!", spos=0, epos=3),
+        ParserError("Unknown keyword argument `a`!", ctx={"spos": 0, "epos": 3}),
     ],
     [
         [
             "ip=1,a=1",
             op_1i1k,
         ],
-        ParserError("Unknown keyword argument `a`!", spos=5, epos=8),
+        ParserError("Unknown keyword argument `a`!", ctx={"spos": 5, "epos": 8}),
     ],
     [
         [
             "ip=1,ip=1",
             op_1i1k,
         ],
-        ParserError("Duplicate keyword argument `ip`!", spos=5, epos=9),
+        ParserError("Duplicate keyword argument `ip`!", ctx={"spos": 5, "epos": 9}),
     ],
     [
         [
@@ -126,8 +128,7 @@ invalid_operators = [
         ],
         ParserError(
             "Positional argument after keyword argument is not allowed!",
-            spos=5,
-            epos=6,
+            ctx={"spos": 5, "epos": 6},
         ),
     ],
     [
@@ -135,7 +136,9 @@ invalid_operators = [
             "",
             op_1i1k,
         ],
-        ParserError("Missing required keyword argument `ip`!", spos=0, epos=0),
+        ParserError(
+            "Missing required keyword argument `ip`!", ctx={"spos": 0, "epos": 0}
+        ),
     ],
     [
         [
@@ -144,8 +147,7 @@ invalid_operators = [
         ],
         ParserError(
             "Missing arguments: expected atleast 1, got 0 argument(s)!",
-            spos=0,
-            epos=0,
+            ctx={"spos": 0, "epos": 0},
         ),
     ],
     [
@@ -155,8 +157,7 @@ invalid_operators = [
         ],
         ParserError(
             "Too many arguments: expected 1 argument(s)!",
-            spos=2,
-            epos=3,
+            ctx={"spos": 2, "epos": 3},
         ),
     ],
 ]
@@ -164,11 +165,13 @@ invalid_operators = [
 build_error = [
     [
         ["a", op_1p],
-        ParserError("Data validation failed for argument!", spos=0, epos=1),
+        ParserError("Data validation failed for argument!", ctx={"spos": 0, "epos": 1}),
     ],
     [
         ["ip=a", op_1k],
-        ParserError("Data validation failed for argument `ip`!", spos=0, epos=4),
+        ParserError(
+            "Data validation failed for argument `ip`!", ctx={"spos": 0, "epos": 4}
+        ),
     ],
 ]
 
@@ -181,8 +184,7 @@ def test_parse_arguments(input, expected):
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
     assert str(e.value) == str(expected)
-    assert e.value.spos == expected.spos
-    assert e.value.epos == expected.epos
+    assert e.value.ctx == expected.ctx
 
 
 @pytest.mark.parametrize("input,expected", build_error)
@@ -193,10 +195,11 @@ def test_parse_arguments_build_error(input, expected):
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
 
-    assert str(e.value) == str(expected)
-    assert e.value.spos == expected.spos
-    assert e.value.epos == expected.epos
+    assert e.value.message == expected.message
+    assert e.value.ctx["spos"] == expected.ctx["spos"]
+    assert e.value.ctx["epos"] == expected.ctx["epos"]
     assert isinstance(e.value.ctx["error"], ValidationError)
+    assert str(e.value)
 
 
 def test_valid():

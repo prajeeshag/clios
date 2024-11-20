@@ -52,68 +52,82 @@ class CliParamParser(ParamParserAbc):
                 if k in kwd_values:
                     raise ParamParserError(
                         f"Duplicate keyword argument `{k}`!",
-                        spos=spos,
-                        epos=epos,
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                        },
                     )
                 try:
                     param_name = parameters.get_keyword_argument(k)
                 except KeyError:
                     raise ParamParserError(
                         f"Unknown keyword argument `{k}`!",
-                        spos=spos,
-                        epos=epos,
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                        },
                     )
                 try:
                     value = param_name.build_phase_validator.validate_python(v)
                 except ValidationError as e:
                     raise ParamParserError(
                         f"Data validation failed for argument `{k}`!",
-                        string,
-                        spos=spos,
-                        epos=epos,
-                        ctx={"error": e},
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                            "error": e,
+                        },
                     )
                 kwd_values[k] = value
             else:
                 if len(kwd_values) > 0:
                     raise ParamParserError(
                         "Positional argument after keyword argument is not allowed!",
-                        string,
-                        spos=spos,
-                        epos=epos,
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                        },
                     )
                 try:
                     param_name = next(positional_arg_iter)
                 except StopIteration:
                     raise ParamParserError(
                         f"Too many arguments: expected {len(arg_values)} argument(s)!",
-                        spos=spos,
-                        epos=epos,
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                        },
                     )
                 try:
                     value = param_name.build_phase_validator.validate_python(arg)
                 except ValidationError as e:
                     raise ParamParserError(
                         "Data validation failed for argument!",
-                        spos=spos,
-                        epos=epos,
-                        ctx={"error": e},
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                            "error": e,
+                        },
                     )
                 arg_values.append(value)
 
         if len(arg_values) < parameters.num_required_args:
             raise ParamParserError(
                 f"Missing arguments: expected atleast {parameters.num_required_args}, got {len(arg_values)} argument(s)!",
-                spos=spos,
-                epos=epos,
+                ctx={
+                    "spos": spos,
+                    "epos": epos,
+                },
             )
 
         for param_name in parameters.required_keywords.keys():
             if param_name not in kwd_values:
                 raise ParamParserError(
                     f"Missing required keyword argument `{param_name}`!",
-                    spos=spos,
-                    epos=epos,
+                    ctx={
+                        "spos": spos,
+                        "epos": epos,
+                    },
                 )
 
         return tuple(arg_values), tuple(kwd_values.items())
