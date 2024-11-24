@@ -10,13 +10,14 @@
 
 ---
 
-Clios, create chainable command line operators in Python
+**Documentation**: [https://clios.prajeesh-ag.com](https://clios.prajeesh-ag.com)
+
+___
+
+**Clios** is a Python library designed to create chainable command-line operators with ease. Inspired by **Climate Data Operators**([**CDO**](https://code.mpimet.mpg.de/projects/cdo)), it makes it simple to build CDO-like application in Python. Powered by **Pydantic**!
 
 ## Installation
 <!--termynal-->
 ```
 $ pip install clios
 ```
-
-
-[**Tutorial**](https://prajeeshag.github.io/clios)
