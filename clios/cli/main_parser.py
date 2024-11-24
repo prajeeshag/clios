@@ -110,7 +110,15 @@ class CliParser(ParserAbc):
         )
         if op.output.info.num_outputs == 1:
             output_synopsis = "output"
-        return f"{operator_name},{param_synopsis} {input_synopsis} {output_synopsis}"
+
+        synopsis = operator_name
+        if param_synopsis:
+            synopsis = f"{synopsis},{param_synopsis}"
+        if input_synopsis:
+            synopsis = f"{synopsis} {input_synopsis}"
+        if output_synopsis:
+            synopsis = f"{synopsis} {output_synopsis}"
+        return synopsis
 
     def _get_operator(
         self,

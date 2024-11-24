@@ -23,10 +23,10 @@ class OperatorError(Exception):
 @dataclass(frozen=True)
 class OperatorAbc(ABC):
     @abstractmethod
-    def execute(self) -> Any: ...
+    def execute(self) -> Any: ...  # pragma: no cover
 
     @abstractmethod
-    def draw(self) -> str: ...
+    def draw(self) -> str: ...  # pragma: no cover
 
 
 @dataclass(frozen=True)
@@ -39,9 +39,6 @@ class SimpleOperator(OperatorAbc):
         return self.input_
 
     def draw(self) -> str:
-        return self.name
-
-    def __str__(self) -> str:
         return self.name
 
 
@@ -58,7 +55,6 @@ class BaseOperator(OperatorAbc):
         iter_args = self.operator_fn.parameters.iter_positional_arguments()
         for val in self.args:
             param = next(iter_args)
-            print(self.name, param.name, val)
             try:
                 arg_values.append(param.execute_phase_validator.validate_python(val))
             except ValidationError as e:

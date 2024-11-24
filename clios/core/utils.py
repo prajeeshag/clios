@@ -31,7 +31,7 @@ def get_output_info(return_annotation: t.Any) -> Output:
 def get_parameter_type_annotation(param: inspect.Parameter) -> ParamTypes | None:
     if t.get_origin(param.annotation) is t.Annotated:
         annotated_args = t.get_args(param.annotation)
-        for arg in reversed(annotated_args):
+        for arg in reversed(annotated_args[1:]):
             if isinstance(arg, (Param, Input)):
                 return arg
     return None

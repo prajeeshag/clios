@@ -52,7 +52,6 @@ class CliPresenter:
             message += f"\n{str(sub_error)}"
 
         error_argument_text = Text()
-
         if token_index is not None:
             token_before = token_index - 1
             token_after = token_index + 1
@@ -76,20 +75,20 @@ class CliPresenter:
                 error_argument_text.append(" ")
                 error_argument_text.append("...", style="dim")
 
-        if unchainable_token_index is not None and token_index is not None:
-            error_argument_text.append(" ")
-            error_argument_text.append(
-                args[unchainable_token_index], style="bold red underline"
-            )
-
-            if unchainable_token_index < len(args) - 1:
+            if unchainable_token_index is not None:
                 error_argument_text.append(" ")
-                error_argument_text.append("...", style="dim")
+                error_argument_text.append(
+                    args[unchainable_token_index], style="bold red underline"
+                )
+
+                if unchainable_token_index < len(args) - 1:
+                    error_argument_text.append(" ")
+                    error_argument_text.append("...", style="dim")
+
+            console.print()
+            console.print(Panel(error_argument_text))
 
         console.print()
-        if error_argument_text:
-            console.print(Panel(error_argument_text))
-            console.print()
         console.print(Text(message, style="bold red"))
 
     def print_list(self):
@@ -136,14 +135,14 @@ class CliPresenter:
         args_doc: list[dict[str, str]] = []
         kwds_doc: list[dict[str, str]] = []
         for param in op_fn.parameters:
-            if param.is_positional_param:
+            if param.is_positional_param or param.is_var_param:
                 docs = args_doc
-            elif param.is_keyword_param:
+            elif param.is_keyword_param or param.is_var_keyword:
                 docs = kwds_doc
             else:
                 continue
-            doc: dict[str, str] = {}
-            doc["description"] = param.description
+            doc: dict[str, Any] = {}
+            doc["name"] = param.name
             doc["type"] = _KnownTypes(param.type_).name
             doc["required"] = "Required" if param.is_required else "Optional"
             doc["default_value"] = str(param.default)
@@ -151,6 +150,7 @@ class CliPresenter:
                 doc["default_value"] = "''"
             if param.default is param.empty:
                 doc["default_value"] = ""
+            doc["description"] = param.description
             docs.append(doc)
 
         # Synopsis
@@ -162,11 +162,12 @@ class CliPresenter:
 
         # Render all parts
         console.print(synopsis_panel)
-        if long_description or short_description:
-            description_text = Text()
+        description_text = Text()
+        if short_description:
             description_text.append(f"{short_description}\n\n", style="bold blue")
-            if long_description:
-                description_text.append(long_description, style="dim")
+        if long_description:
+            description_text.append(long_description, style="dim")
+        if short_description or long_description:
             description_panel = Panel(
                 description_text,
                 title="Description",
@@ -175,14 +176,29 @@ class CliPresenter:
             console.print(description_panel)
 
         if args_doc:
-            param_table_args = create_param_table(
+            param_table_args = _create_param_table(
                 args_doc, title="Positional Arguments"
             )
             console.print(param_table_args)
 
         if kwds_doc:
-            param_table_kwds = create_param_table(kwds_doc, title="Keyword Arguments")
+            param_table_kwds = _create_param_table(kwds_doc, title="Keyword Arguments")
             console.print(param_table_kwds)
+
+        examples: list[str] = []
+        for _, example in op_fn.examples:
+            examples.append(example)
+
+        if examples:
+            text = "\n".join(examples)
+            examples_text = Text()
+            examples_text.append(text, style="italic")
+            examples_panel = Panel(
+                examples_text,
+                title="Examples",
+                style="bold magenta",
+            )
+            console.print(examples_panel)
 
     def dry_run(self, args: list[str]):
         """
@@ -205,6 +221,7 @@ class CliPresenter:
         except ParserError as e:
             self.process_error(e, args)
             raise SystemExit(1)
+
         try:
             operator.execute()
         except OperatorError as e:
@@ -212,7 +229,7 @@ class CliPresenter:
             raise SystemExit(1)
 
 
-def create_param_table(args_doc: list[dict[str, str]], title: str) -> Table:
+def _create_param_table(args_doc: list[dict[str, str]], title: str) -> Table:
     param_table = Table(title=title, show_header=True, header_style="bold magenta")
     param_table.add_column("Parameter", style="dim", no_wrap=True)
     param_table.add_column("Type", style="dim", no_wrap=True)
@@ -227,6 +244,6 @@ def create_param_table(args_doc: list[dict[str, str]], title: str) -> Table:
             doc["name"],
             doc["type"],
             doc["required"],
-            doc["description"],
+            description,
         )
     return param_table

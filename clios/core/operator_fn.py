@@ -2,7 +2,7 @@
 import typing as t
 from dataclasses import dataclass
 
-from docstring_parser import parse as parse_docstring  # type: ignore
+from griffe import Docstring, DocstringSectionKind, parse_google
 
 from .param_parser import ParamParserAbc
 from .parameter import Parameter, Parameters, ReturnValue
@@ -25,14 +25,50 @@ class OperatorFn:
         """Get the short description of the operator"""
         if not self.callback.__doc__:
             return ""
-        return parse_docstring(self.callback.__doc__).short_description
+        parsed_docstring = parse_google(Docstring(self.callback.__doc__))
+
+        if parsed_docstring[0].kind != DocstringSectionKind.text:
+            return ""
+
+        return parsed_docstring[0].value
 
     @property
     def long_description(self):
         """Get the long description of the operator"""
         if not self.callback.__doc__:
             return ""
-        return parse_docstring(self.callback.__doc__).long_description
+        parsed_docstring = parse_google(Docstring(self.callback.__doc__))
+
+        for section in parsed_docstring:
+            if section.title and section.title.lower() == "description":
+                return section.value.contents
+        return ""
+
+    @property
+    def examples(self) -> list[tuple[str, str]]:
+        """Get the examples of the operator"""
+        if not self.callback.__doc__:
+            return []
+
+        parsed_docstring = parse_google(Docstring(self.callback.__doc__))
+
+        for section in parsed_docstring:
+            if section.title and (
+                section.title.lower() == "operator examples"
+                or section.title.lower() == "operator example"
+            ):
+                example_docstring = parse_google(Docstring(section.value.contents))
+                examples: list[tuple[str, str]] = []
+                for example in example_docstring:
+                    title = "" if example.title is None else example.title
+                    contents = (
+                        example.value
+                        if example.kind == DocstringSectionKind.text
+                        else example.value.contents
+                    )
+                    examples.append((title, contents))
+                return examples
+        return []
 
     @classmethod
     def validate(

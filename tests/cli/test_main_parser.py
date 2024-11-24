@@ -93,6 +93,10 @@ def op_1i1k1o(i: intIn, *, ip: intParam) -> intOut:
     return 1
 
 
+def op_2o() -> t.Annotated[int, Output(callback=print, num_outputs=2)]:
+    return 1
+
+
 ops = {
     "op_": op_,
     "op_1o": op_1o,
@@ -112,6 +116,7 @@ ops = {
     "op_1i1p1o": op_1i1p1o,
     "op_1i1k1o": op_1i1k1o,
     "op_1o_noroot": op_1o_noroot,
+    "op_2o": op_2o,
 }
 operator_fns = OperatorRegistry()
 param_parser = CliParamParser()
@@ -257,6 +262,12 @@ def test_get_synopsis():
     )
     op_fn = operator_fns.get("op_1i1p1o")
     assert parser.get_synopsis(op_fn, "operator") == "operator,ip i output"
+
+    op_fn = operator_fns.get("op_2o")
+    assert parser.get_synopsis(op_fn, "operator") == "operator output1 output2"
+
+    op_fn = operator_fns.get("op_1i")
+    assert parser.get_synopsis(op_fn, "operator") == "operator i"
 
 
 def test_get_operator_passing():

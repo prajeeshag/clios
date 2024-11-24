@@ -225,6 +225,7 @@ class ReturnValue:
         prohibited_validators = (PlainValidator, WrapValidator, AfterValidator)
         if _get_type(annotation) is None:
             type_adapter: TypeAdapter[t.Any] = TypeAdapter(None)
+            info = Output(info.callback, num_outputs=0)
         else:
             if t.get_origin(annotation) is t.Annotated:
                 if any(
@@ -234,10 +235,6 @@ class ReturnValue:
                     raise AssertionError(
                         "Only `BeforeValidator` is allowed on return value!"
                     )
-                metadata = [arg for arg in t.get_args(annotation)[1:]]
-                type_ = t.get_args(annotation)[0]
-                if metadata:
-                    annotation = t.Annotated[type_, *metadata]
             annotation = t.Annotated[annotation, Strict()]
             type_adapter: TypeAdapter[t.Any] = TypeAdapter(
                 annotation, config=ConfigDict(arbitrary_types_allowed=True)

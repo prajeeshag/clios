@@ -27,6 +27,9 @@ def output(input: Annotated[Any, Input()]) -> None:
 @click.option(
     "--show", type=str, help="Show the help information for the given operator", nargs=1
 )
+@click.option(
+    "--dry-run", type=bool, help="Dry run: prints the call tree", is_flag=True
+)
 @click.pass_context
 def _click_app(ctx: Any, **kwargs: Any) -> tuple[list[str], dict[str, Any]]:
     return ctx.args, kwargs
@@ -66,7 +69,7 @@ class Clios:
 
         return decorator
 
-    def __call__(self) -> Any:
+    def __call__(self):
         try:
             args, options = _click_app(standalone_mode=False)
         except click.exceptions.UsageError as e:
@@ -84,5 +87,4 @@ class Clios:
 
         with click.Context(_click_app) as ctx:
             click.echo(_click_app.get_help(ctx))
-
         # self.presenter.print_list()
