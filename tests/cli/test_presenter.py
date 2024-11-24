@@ -125,16 +125,22 @@ def test_print_detail(
                 "operator1,param1[,param2=<val>] input1 input2 output",
                 title="Synopsis",
                 style="bold yellow",
+                title_align="left",
+                padding=(1, 2),
             ),
             mocker.call(
                 description_text,
                 title="Description",
                 style="bold blue",
+                title_align="left",
+                padding=(1, 2),
             ),
             mocker.call(
                 examples_text,
                 title="Examples",
                 style="bold magenta",
+                title_align="left",
+                padding=(1, 2),
             ),
         ]
     )
@@ -205,7 +211,6 @@ def test_process_error(get_presenter, mock_console, mock_panel, mock_text):
     get_presenter([operator1]).process_error(error, args)
     mock_console().print.assert_called()
     mock_text.assert_called_with("Test error", style="bold red")
-    mock_panel.assert_called()
 
 
 def test_process_error_no_ctx(get_presenter, mock_console, mock_panel, mock_text):

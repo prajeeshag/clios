@@ -1,16 +1,15 @@
 # type: ignore
 
-import pytest
-from parameters import parameters
+import sys
 
-from clios.cli.cli_parser import ASTBuilder
-from clios.cli.tokenizer import tokenize
-from examples.calc.calc import app
+import pytest
+from calc import app
+from parameters import parameters
 
 
 @pytest.mark.parametrize("input, output", parameters)
-def test(input: list[str], output: str):
-    parser = ASTBuilder(app.operators_db)
-    tokens = tokenize(input)
-    op = parser.parse_tokens(tokens, return_value=True)
-    assert op.execute() == output
+def test(input: list[str], output: str, capsys):
+    sys.argv = ["calc", *input]
+    app()
+    captured = capsys.readouterr()
+    assert captured.out == f"{output}\n"

@@ -13,9 +13,11 @@ from .presenter import CliPresenter
 
 
 def output(input: Annotated[Any, Input()]) -> None:
-    """Print the input data to the screen.
+    """
+    Print the given input data to the terminal.
 
-    It uses the `rich` library to print the data in a formatted way.
+    description:
+        It uses the `rich` library to print the data in a formatted way.
     """
     print(input)
 
@@ -40,16 +42,16 @@ default_param_parser = CliParamParser()
 
 class Clios:
     def __init__(self) -> None:
-        self.operators = OperatorRegistry()
-        self.parser = CliParser()
-        self.operators.add(
+        self._operators = OperatorRegistry()
+        self._parser = CliParser()
+        self._operators.add(
             "print",
             OperatorFn.validate(
                 output,
                 param_parser=default_param_parser,
             ),
         )
-        self.presenter = CliPresenter(self.operators, self.parser)
+        self._presenter = CliPresenter(self._operators, self._parser)
 
     def operator(
         self,
@@ -64,7 +66,7 @@ class Clios:
                 implicit=implicit,
             )
             key = name if name else func.__name__
-            self.operators.add(key, op_obj)
+            self._operators.add(key, op_obj)
             return func
 
         return decorator
@@ -77,13 +79,13 @@ class Clios:
             sys.exit(1)
 
         if options["list"]:
-            return self.presenter.print_list()
+            return self._presenter.print_list()
         if options["show"] is not None:
-            return self.presenter.print_detail(options["show"])
+            return self._presenter.print_detail(options["show"])
         if options["dry_run"]:
-            return self.presenter.dry_run(args)
+            return self._presenter.dry_run(args)
         if args:
-            return self.presenter.run(args)
+            return self._presenter.run(args)
 
         with click.Context(_click_app) as ctx:
             click.echo(_click_app.get_help(ctx))
