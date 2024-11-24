@@ -16,7 +16,7 @@ def test_operator_registration(app):
     def test_op():
         return "test"
 
-    assert app.operators.get("test_op")
+    assert app._operators.get("test_op")
 
 
 def test_click_app_list(app):

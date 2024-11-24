@@ -10,21 +10,25 @@ app = Clios()
 
 @app.operator()
 def add(input1: float, input2: float) -> float:
+    """Add two numbers."""
     return input1 + input2
 
 
 @app.operator()
 def sub(input1: float, input2: float) -> float:
+    """Subtract two numbers."""
     return input1 - input2
 
 
 @app.operator()
 def mul(input1: float, input2: float) -> float:
+    """Multiply two numbers."""
     return input1 * input2
 
 
 @app.operator()
 def div(input1: float, input2: float) -> float:
+    """Divide two numbers."""
     return input1 / input2
 
 

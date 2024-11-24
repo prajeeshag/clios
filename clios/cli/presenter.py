@@ -86,7 +86,7 @@ class CliPresenter:
                     error_argument_text.append("...", style="dim")
 
             console.print()
-            console.print(Panel(error_argument_text))
+            console.print(error_argument_text)
 
         console.print()
         console.print(Text(message, style="bold red"))
@@ -158,6 +158,8 @@ class CliPresenter:
             synopsis,
             title="Synopsis",
             style="bold yellow",
+            title_align="left",
+            padding=(1, 2),
         )
 
         # Render all parts
@@ -172,6 +174,8 @@ class CliPresenter:
                 description_text,
                 title="Description",
                 style="bold blue",
+                title_align="left",
+                padding=(1, 2),
             )
             console.print(description_panel)
 
@@ -197,6 +201,8 @@ class CliPresenter:
                 examples_text,
                 title="Examples",
                 style="bold magenta",
+                title_align="left",
+                padding=(1, 2),
             )
             console.print(examples_panel)
 
