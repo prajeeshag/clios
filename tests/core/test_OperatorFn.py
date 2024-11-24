@@ -63,9 +63,33 @@ def fn(
     """
     Short description
 
-    Long description
+    description:
+        Long description
+
+    Operator Examples:
+        Example 1:
+            $ cdo -fn,1 input output
+            $ cdo -fn,1 input output
+
+        Example 2:
+            $ cdo -fn,2 input output
     """
     pass
+
+
+def fn12():
+    """
+    Examples:
+        Short description
+    """
+
+
+def fn_simple_example():
+    """
+    Operator Examples:
+        $ cdo -fn,1 input output
+        $ cdo -fn,2 input output
+    """
 
 
 def fn1() -> int:
@@ -84,13 +108,17 @@ def fn4(in1: "PydanticType") -> int:
     pass
 
 
-def fn5(in1: SomeType) -> int:
+def fn5(in1: t.Annotated[SomeType, "someAnnotation"]) -> int:
     pass
 
 
 def test_(mock_arg_parser):
     op = OperatorFn.validate(fn, param_parser=mock_arg_parser)
     op1 = OperatorFn.validate(fn1, param_parser=mock_arg_parser)
+    op12 = OperatorFn.validate(fn12, param_parser=mock_arg_parser)
+    op_simple_example = OperatorFn.validate(
+        fn_simple_example, param_parser=mock_arg_parser
+    )
     assert isinstance(op, OperatorFn)
     assert isinstance(op.parameters, Parameters)
     assert isinstance(op.output, ReturnValue)
@@ -98,8 +126,21 @@ def test_(mock_arg_parser):
     assert op.param_parser is mock_arg_parser
     assert op.short_description == "Short description"
     assert op.long_description == "Long description"
+    assert op.examples[0][0] == "Example 1"
+    assert op.examples[0][1] == "$ cdo -fn,1 input output\n$ cdo -fn,1 input output"
+    assert op.examples[1][0] == "Example 2"
+    assert op.examples[1][1] == "$ cdo -fn,2 input output"
     assert op1.short_description == ""
     assert op1.long_description == ""
+    assert op1.examples == []
+    assert op12.examples == []
+    assert op12.long_description == ""
+    assert op12.short_description == ""
+    assert op_simple_example.examples[0][0] == ""
+    assert (
+        op_simple_example.examples[0][1]
+        == "$ cdo -fn,1 input output\n$ cdo -fn,2 input output"
+    )
 
 
 def test_Parameter_is_input():

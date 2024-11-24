@@ -1,6 +1,6 @@
 from typing import Any, Callable, Literal
 
-from pydantic import PositiveInt
+from pydantic import NonNegativeInt
 from pydantic.dataclasses import dataclass
 
 
@@ -28,4 +28,4 @@ ParamTypes = Param | Input
 @dataclass(frozen=True)
 class Output:
     callback: Callable[..., None] | None = None
-    num_outputs: PositiveInt = 1
+    num_outputs: NonNegativeInt = 1

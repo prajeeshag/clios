@@ -12,7 +12,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "click==8.1.*",
-    "docstring-parser==0.16.*",
+    "griffe==1.5.*",
     "pydantic==2.9.*",
     "rich>=13.9.4",
 ]

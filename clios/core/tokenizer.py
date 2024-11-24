@@ -13,7 +13,7 @@ class Token(ABC):
 
     @classmethod
     @abstractmethod
-    def match(cls, string: str) -> bool: ...
+    def match(cls, string: str) -> bool: ...  # pragma: no cover
 
 
 INPUT = t.TypeVar("INPUT")
@@ -21,4 +21,4 @@ INPUT = t.TypeVar("INPUT")
 
 class Tokenizer[INPUT](ABC):
     @abstractmethod
-    def tokenize(self, input: INPUT) -> tuple[Token, ...]: ...
+    def tokenize(self, input: INPUT) -> tuple[Token, ...]: ...  # pragma: no cover

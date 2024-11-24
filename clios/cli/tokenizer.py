@@ -63,7 +63,7 @@ class TokenType(Enum):
         if not isinstance(value, str):
             raise TokenError("Invalid token type")
         for member in cls:
-            if member is not cls.STRING and member.value.match(value):
+            if member.value.match(value) and member is not cls.STRING:
                 return member
         # if no match, return STRING
         return cls.STRING

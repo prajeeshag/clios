@@ -175,8 +175,11 @@ def test_output_validation_failed():
     op1 = parser.get_operator(
         operator_fns=operators, input=["-op_1i1oe", "-op_1o", "output"]
     )
-    with pytest.raises(OperatorError):
+    with pytest.raises(OperatorError) as e:
         op.execute()
+
+    assert "Data validation failed for the output of operator `op_1oe`!" in str(e.value)
+    assert "It's a bug! Please report it!" in str(e.value)
 
     with pytest.raises(OperatorError):
         op1.execute()
