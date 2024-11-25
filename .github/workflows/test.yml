@@ -50,7 +50,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-      - run: uv sync
+      - run: uv sync --all-extras --dev
       - run: ./scripts/lint.sh
 
   test:
@@ -80,7 +80,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-      - run: uv sync
+      - run: uv sync --all-extras --dev
       - run: ./scripts/test.sh
       - name: Create coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
