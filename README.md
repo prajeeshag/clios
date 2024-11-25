@@ -13,7 +13,7 @@
 
 ___
 
-**Clios** is a Python library designed to create chainable command-line operators with ease. Inspired by **Climate Data Operators**([**CDO**](https://code.mpimet.mpg.de/projects/cdo)), it makes it simple to build CDO-like application in Python. Powered by **Pydantic**!
+**Clios** is a Python library designed to create chainable command-line operators with ease. Inspired by **Climate Data Operators** ([**CDO**](https://code.mpimet.mpg.de/projects/cdo)), it makes it simple to build CDO-like application in Python. Powered by **Pydantic**!
 
 ## Installation
 <!--termynal-->
