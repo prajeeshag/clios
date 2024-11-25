@@ -9,7 +9,7 @@ description = "Create chainable command line operators"
 authors = [{ name = "Prajeesh Ag", email = "prajeeshag@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "click==8.1.*",
     "griffe==1.5.*",
@@ -39,9 +39,20 @@ name = "cz_gitmoji"
 
 [dependency-groups]
 docs = ["mkdocs>=1.6.1", "mkdocs-material>=9.5.44", "termynal>=0.12.1"]
-test = [
+dev = [
     "pytest>=8.3.3",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "pytest-sugar>=1.0.0",
 ]
+
+[tool.uv]
+default-groups = ["dev", "docs"]
+
+[tool.coverage.run]
+source = ["clios"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
