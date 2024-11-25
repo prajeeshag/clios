@@ -50,8 +50,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-      - run: uv sync --all-extras --dev
-      - run: ./scripts/lint.sh
+      - run: uv sync
+      - run: uv run ./scripts/lint.sh
 
   test:
     needs:
@@ -80,11 +80,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-      - run: uv sync --all-extras --dev
-      - run: ./scripts/test.sh
+      - run: uv sync
+      - run: uv run ./scripts/test.sh
       - name: Create coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        run: coverage xml
+        run: uv run coverage xml
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
