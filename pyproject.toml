@@ -40,10 +40,12 @@ name = "cz_gitmoji"
 [dependency-groups]
 docs = ["mkdocs>=1.6.1", "mkdocs-material>=9.5.44", "termynal>=0.12.1"]
 dev = [
+    "mypy>=1.13.0",
     "pytest>=8.3.3",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "pytest-sugar>=1.0.0",
+    "ruff>=0.8.0",
 ]
 
 [tool.uv]

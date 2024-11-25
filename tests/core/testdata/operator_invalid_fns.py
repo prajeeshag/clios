@@ -29,15 +29,15 @@ def ff19(input2: [Any, Input()]) -> int:
 
 
 def ff21(input1: list) -> int:
-    """Missing type argument for generic class in parameter `input1`"""
+    """Unsupported type annotation for parameter `input1`"""
 
 
 def ff22(input1: tuple) -> int:
-    """Missing type argument for generic class in parameter `input1`"""
+    """Unsupported type annotation for parameter `input1`"""
 
 
 def ff23(input1: Annotated[tuple, Input()]) -> int:
-    """Missing type argument for generic class in parameter `input1`"""
+    """Unsupported type annotation for parameter `input1`"""
 
 
 def ff24(input1: Annotated[[int, str, ...], Input()]) -> int:

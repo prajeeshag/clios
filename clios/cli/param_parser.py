@@ -58,7 +58,7 @@ class CliParamParser(ParamParserAbc):
                         },
                     )
                 try:
-                    param_name = parameters.get_keyword_argument(k)
+                    param = parameters.get_keyword_argument(k)
                 except KeyError:
                     raise ParamParserError(
                         f"Unknown keyword argument `{k}`!",
@@ -68,7 +68,7 @@ class CliParamParser(ParamParserAbc):
                         },
                     )
                 try:
-                    value = param_name.build_phase_validator.validate_python(v)
+                    value = param.build_phase_validator.validate_python(v)
                 except ValidationError as e:
                     raise ParamParserError(
                         f"Data validation failed for argument `{k}`!",
@@ -89,7 +89,7 @@ class CliParamParser(ParamParserAbc):
                         },
                     )
                 try:
-                    param_name = next(positional_arg_iter)
+                    param = next(positional_arg_iter)
                 except StopIteration:
                     raise ParamParserError(
                         f"Too many arguments: expected {len(arg_values)} argument(s)!",
@@ -98,8 +98,9 @@ class CliParamParser(ParamParserAbc):
                             "epos": epos,
                         },
                     )
+
                 try:
-                    value = param_name.build_phase_validator.validate_python(arg)
+                    value = param.build_phase_validator.validate_python(arg)
                 except ValidationError as e:
                     raise ParamParserError(
                         "Data validation failed for argument!",

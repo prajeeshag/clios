@@ -10,7 +10,7 @@ from pydantic.functional_validators import AfterValidator, PlainValidator, WrapV
 from typing_extensions import Doc
 
 from .param_info import Input, Output, Param, ParamTypes
-from .utils import get_parameter_type_annotation, is_generic_type
+from .utils import get_parameter_type_annotation
 
 
 def _get_type(annotation: t.Any):
@@ -30,7 +30,7 @@ def _init_validator(
         annotation = t.Any
 
     if validators:
-        annotation = t.Annotated[annotation, *validators]
+        annotation = t.Annotated[annotation, *validators]  # type: ignore
 
     if info.strict and _get_type(annotation) is not t.Any:
         annotation = t.Annotated[annotation, Strict()]
@@ -101,15 +101,9 @@ class Parameter:
             else param.annotation
         )
 
-        try:
-            is_generic = is_generic_type(type_)
-        except TypeError:
-            raise AssertionError(
-                f"Unsupported type annotation for parameter `{param.name}`"
-            )
-        assert (
-            not is_generic
-        ), f"Missing type argument for generic class in parameter `{param.name}`"
+        assert not _is_not_supported(
+            type_
+        ), f"Unsupported type annotation for parameter `{param.name}`"
 
         default = param.default
         if param.default is i.Signature.empty:
@@ -223,8 +217,9 @@ class ReturnValue:
     @classmethod
     def validate(cls, annotation: t.Any, info: Output) -> "ReturnValue":
         prohibited_validators = (PlainValidator, WrapValidator, AfterValidator)
+        type_adapter: TypeAdapter[t.Any]
         if _get_type(annotation) is None:
-            type_adapter: TypeAdapter[t.Any] = TypeAdapter(None)
+            type_adapter = TypeAdapter(None)
             info = Output(info.callback, num_outputs=0)
         else:
             if t.get_origin(annotation) is t.Annotated:
@@ -236,7 +231,7 @@ class ReturnValue:
                         "Only `BeforeValidator` is allowed on return value!"
                     )
             annotation = t.Annotated[annotation, Strict()]
-            type_adapter: TypeAdapter[t.Any] = TypeAdapter(
+            type_adapter = TypeAdapter(
                 annotation, config=ConfigDict(arbitrary_types_allowed=True)
             )
         return cls(type_adapter, annotation, info)
@@ -340,3 +335,15 @@ class Parameters(tuple[Parameter, ...]):
             param for param in self if param.is_required and param.is_positional_param
         ]
         return len(params)
+
+
+def _is_not_supported(type_: t.Any) -> bool:
+    _builtin_generic_types = [  # type: ignore
+        list,
+        dict,
+        set,
+        tuple,
+        frozenset,
+    ]
+
+    return not isinstance(type_, type) or type_ in _builtin_generic_types

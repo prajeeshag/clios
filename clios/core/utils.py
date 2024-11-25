@@ -5,18 +5,6 @@ from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwa
 
 from .param_info import Input, Output, Param, ParamTypes
 
-_builtin_generic_types = [  # type: ignore
-    list,
-    dict,
-    set,
-    tuple,
-    frozenset,
-]
-
-
-def is_generic_type(type_: t.Any) -> bool:
-    return issubclass(type_, t.Generic) or type_ in _builtin_generic_types
-
 
 def get_output_info(return_annotation: t.Any) -> Output:
     if t.get_origin(return_annotation) is not t.Annotated:
