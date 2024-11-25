@@ -1,26 +1,92 @@
-name: Test 
+name: Test
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - main  # trigger CI on pushes to the main branch
+      - main
 
 jobs:
-  test:
+  changes:
     runs-on: ubuntu-latest
-
+    permissions:
+      pull-requests: read
+    outputs:
+      tests: ${{ steps.filter.outputs.tests }}
     steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      # For pull requests it's not necessary to checkout the code but for the main branch it is
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            tests:
+              - clios/**
+              - tests/**
+              - examples/**
+              - pyproject.toml
+              - .github/workflows/test.yml
+  lint:
+    needs:
+      - changes
+    if: ${{ needs.changes.outputs.tests == 'true' }}
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
 
+    # Set job outputs to values from filter step
+    steps:
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+      - run: uv sync --all-extras --dev
+      - run: ./scripts/lint.sh
 
-      - name: Install tox
-        run: pip install tox>=4
+  test:
+    needs:
+      - changes
+      - lint
+    if: ${{ needs.changes.outputs.tests == 'true' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12", "3.13"]
 
-      - name: Run tests, lint, format, type
-        run: tox
+    runs-on: ${{ matrix.os }}
+    # Required permissions
+    permissions:
+      pull-requests: read
+
+    # Set job outputs to values from filter step
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+      - run: uv sync --all-extras --dev
+      - run: ./scripts/test.sh
+      - name: Create coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: coverage xml
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
