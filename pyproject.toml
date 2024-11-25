@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools >= 61.0", "wheel", "setuptools_scm"]
-build-backend = "setuptools.build_meta"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
 name = "clios"
@@ -22,17 +22,14 @@ homepage = "https://prajeeshag.github.io/clios"
 repository = "https://github.com/prajeeshag/clios"
 documentation = "https://prajeeshag.github.io/clios"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["clios"]
-exclude = ["tests", "examples"]
+[tool.pdm.build]
+excludes = ["tests", "examples"]
+
+[tool.pdm.version]
+source = "scm"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "examples"]
-
-[tool.setuptools_scm]
-version_scheme = "guess-next-dev"
-local_scheme = "node-and-timestamp"
 
 [tool.commitizen]
 name = "cz_gitmoji"
