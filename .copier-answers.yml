@@ -1,0 +1,10 @@
+_commit: 9bcbe4c
+_src_path: gh:prajeeshag/pyproject_template
+author_email: prajeeshag@gmail.com
+author_name: Prajeesh Ag
+docs_site_name: Clios
+ghname: prajeeshag
+module_name: clios
+project_name: clios
+requires_python: '>=3.12'
+year: '2024'

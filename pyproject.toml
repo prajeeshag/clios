@@ -10,6 +10,12 @@ authors = [{ name = "Prajeesh Ag", email = "prajeeshag@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.12"
+dependencies = [
+    "click==8.1.*",
+    "griffe==1.5.*",
+    "pydantic==2.9.*",
+    "rich>=13.9.4",
+]
 
 [project.urls]
 homepage = "https://prajeeshag.github.io/clios"
@@ -17,8 +23,9 @@ repository = "https://github.com/prajeeshag/clios"
 documentation = "https://prajeeshag.github.io/clios"
 
 [tool.setuptools.packages.find]
-where = ["src"]
-exclude = ["tests", "docs"]
+where = ["."]
+include = ["clios"]
+exclude = ["tests", "examples"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "examples"]
@@ -26,3 +33,28 @@ testpaths = ["tests", "examples"]
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
 local_scheme = "node-and-timestamp"
+
+[tool.commitizen]
+name = "cz_gitmoji"
+
+[dependency-groups]
+docs = ["mkdocs>=1.6.1", "mkdocs-material>=9.5.44", "termynal>=0.12.1"]
+dev = [
+    "mypy>=1.13.0",
+    "pytest>=8.3.3",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-sugar>=1.0.0",
+    "ruff>=0.8.0",
+]
+
+[tool.uv]
+default-groups = ["dev", "docs"]
+
+[tool.coverage.run]
+source = ["clios"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
