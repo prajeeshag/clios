@@ -9,7 +9,7 @@
 
 ---
 
-**Documentation**: [https://clios.prajeesh-ag.com](https://clios.prajeesh-ag.com)
+**Documentation**: [https://prajeesh-ag.com/clios](https://prajeesh-ag.com/clios)
 
 ___
 
