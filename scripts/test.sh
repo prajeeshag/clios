@@ -2,4 +2,4 @@
 
 set -ex
 
-pytest --cov --cov-report=term ${@}
+uv run pytest --cov --cov-report=term ${@}
