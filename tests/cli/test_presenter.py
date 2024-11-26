@@ -8,9 +8,8 @@ from clios.cli.main_parser import CliParser
 from clios.cli.param_parser import CliParamParser
 from clios.cli.presenter import CliPresenter
 from clios.core.main_parser import ParserError
-from clios.core.operator_fn import OperatorFn
+from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_info import Param
-from clios.core.registry import OperatorRegistry
 
 
 @pytest.fixture
@@ -58,10 +57,10 @@ def get_presenter(mocker):
     param_parser = CliParamParser()
 
     def _presenter(fns):
-        operator_fns = OperatorRegistry()
+        operator_fns = OperatorFns()
         for fn in fns:
-            operator_fns.add(
-                fn.__name__, OperatorFn.validate(fn, param_parser=param_parser)
+            operator_fns[fn.__name__] = OperatorFn.validate(
+                fn, param_parser=param_parser
             )
         return CliPresenter(operator_fns=operator_fns, parser=CliParser())
 

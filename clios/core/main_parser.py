@@ -3,8 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from .operator import RootOperator
-from .operator_fn import OperatorFn
-from .registry import OperatorRegistry
+from .operator_fn import OperatorFn, OperatorFns
 
 
 class ParserErrorCtx(t.TypedDict, total=False):
@@ -39,14 +38,14 @@ class ParserError(Exception):
 class ParserAbc(ABC):
     @abstractmethod
     def get_operator(
-        self, operator_fns: OperatorRegistry, input: t.Any, **kwds: t.Any
+        self, operator_fns: OperatorFns, input: t.Any, **kwds: t.Any
     ) -> RootOperator:
         """
         Parse the tokens and get the tree of operators
 
         Args:
-            tokens (list[Token]): The tokens to parse
-
+            operator_fns (OperatorFns): Dictionary of operator functions
+            input (t.Any): The input to be parsed
         Returns:
             BaseOperator: The operator
         """

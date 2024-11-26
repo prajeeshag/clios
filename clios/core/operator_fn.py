@@ -89,3 +89,40 @@ class OperatorFn:
             callback=func,
             param_parser=param_parser,
         )
+
+
+class OperatorFns(dict[str, OperatorFn]):
+    def __setitem__(self, key: str, value: OperatorFn) -> None:
+        assert (
+            key not in self
+        ), f"Operator '{key}' already exists. Reassignment is not allowed."
+        super().__setitem__(key, value)
+
+    def update(self, *arg, **kwds) -> None:
+        if kwds or not isinstance(arg[0], OperatorFns):
+            raise TypeError(
+                f"update() only accept a single positional argument of type {OperatorFns}"
+            )
+        for key in arg[0].keys():
+            assert (
+                key not in self
+            ), f"Operator '{key}' already exists. Reassignment is not allowed."
+        super().update(arg[0])
+
+    def register(
+        self,
+        *,
+        name: str = "",
+        param_parser: ParamParserAbc,
+        implicit: t.Literal["input", "param"] = "input",
+    ) -> t.Callable[..., t.Any]:
+        def _decorator(func: t.Callable[..., t.Any]):
+            key = name if name else func.__name__
+            self[key] = OperatorFn.validate(
+                func,
+                param_parser=param_parser,
+                implicit=implicit,
+            )
+            return func
+
+        return _decorator

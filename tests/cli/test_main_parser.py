@@ -8,9 +8,8 @@ from clios.cli.main_parser import CliParser, ParserError
 from clios.cli.param_parser import CliParamParser, ParamParserError
 from clios.cli.tokenizer import CliTokenizer
 from clios.core.operator import RootOperator
-from clios.core.operator_fn import OperatorFn
+from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_info import Input, Output, Param
-from clios.core.registry import OperatorRegistry
 
 intOut = t.Annotated[int, Output(callback=print)]
 intParam = t.Annotated[int, Param()]
@@ -118,10 +117,10 @@ ops = {
     "op_1o_noroot": op_1o_noroot,
     "op_2o": op_2o,
 }
-operator_fns = OperatorRegistry()
+operator_fns = OperatorFns()
 param_parser = CliParamParser()
 for name, op in ops.items():
-    operator_fns.add(name, OperatorFn.validate(op, param_parser=param_parser))
+    operator_fns[name] = OperatorFn.validate(op, param_parser=param_parser)
 
 
 invalids = [

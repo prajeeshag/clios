@@ -12,9 +12,8 @@ from clios.core.operator import (
     RootOperator,
     SimpleOperator,
 )
-from clios.core.operator_fn import OperatorFn
+from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_parser import ParamParserError
-from clios.core.registry import OperatorRegistry
 from clios.core.tokenizer import Token
 
 from .tokenizer import CliTokenizer, OperatorToken, StringToken, Tokenizer
@@ -36,7 +35,7 @@ class CliParser(ParserAbc):
 
     def get_operator(
         self,
-        operator_fns: OperatorRegistry,
+        operator_fns: OperatorFns,
         input: list[str],
         callback: t.Callable[..., t.Any] = simple_callback,
         **kwargs: t.Any,
@@ -122,7 +121,7 @@ class CliParser(ParserAbc):
 
     def _get_operator(
         self,
-        operator_fns: OperatorRegistry,
+        operator_fns: OperatorFns,
         operator_name: str,
         param_string: str,
         operator_fn: OperatorFn,
@@ -222,11 +221,10 @@ class CliParser(ParserAbc):
         )
 
     def _get_operator_fn(
-        self, operator_fns: OperatorRegistry, name: str, index: int
+        self, operator_fns: OperatorFns, name: str, index: int
     ) -> OperatorFn:
-        try:
-            op = operator_fns.get(name)
-        except KeyError:
+        op = operator_fns.get(name)
+        if op is None:
             raise ParserError(
                 f"Operator `{name}` not found!", ctx={"token_index": index}
             )

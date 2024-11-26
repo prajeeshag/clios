@@ -10,7 +10,7 @@ from rich.text import Text
 
 from clios.core.main_parser import ParserAbc, ParserError
 from clios.core.operator import OperatorError
-from clios.core.registry import OperatorRegistry
+from clios.core.operator_fn import OperatorFns
 
 
 class _KnownTypes(enum.Enum):
@@ -30,7 +30,7 @@ class _KnownTypes(enum.Enum):
 
 @dataclass(frozen=True)
 class CliPresenter:
-    operator_fns: OperatorRegistry
+    operator_fns: OperatorFns
     parser: ParserAbc
 
     def process_error(self, error: ParserError, args: list[str]) -> None:
@@ -123,7 +123,7 @@ class CliPresenter:
         """
         console = Console()
         try:
-            op_fn = self.operator_fns.get(name)
+            op_fn = self.operator_fns[name]
         except KeyError:
             print(f"Operator `{name}` not found!")
             raise SystemExit(1)

@@ -4,9 +4,8 @@ from typing import Annotated, Any, Callable, Literal
 import click
 from rich import print
 
-from ..core.operator_fn import OperatorFn
+from ..core.operator_fn import OperatorFn, OperatorFns
 from ..core.param_info import Input
-from ..core.registry import OperatorRegistry
 from .main_parser import CliParser
 from .param_parser import CliParamParser
 from .presenter import CliPresenter
@@ -42,14 +41,10 @@ default_param_parser = CliParamParser()
 
 class Clios:
     def __init__(self) -> None:
-        self._operators = OperatorRegistry()
+        self._operators = OperatorFns()
         self._parser = CliParser()
-        self._operators.add(
-            "print",
-            OperatorFn.validate(
-                output,
-                param_parser=default_param_parser,
-            ),
+        self._operators["print"] = OperatorFn.validate(
+            output, param_parser=default_param_parser
         )
         self._presenter = CliPresenter(self._operators, self._parser)
 
@@ -66,7 +61,7 @@ class Clios:
                 implicit=implicit,
             )
             key = name if name else func.__name__
-            self._operators.add(key, op_obj)
+            self._operators[key] = op_obj
             return func
 
         return decorator

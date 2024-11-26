@@ -8,9 +8,8 @@ from pydantic import ValidationError
 from clios.cli.main_parser import CliParser
 from clios.cli.param_parser import CliParamParser
 from clios.core.operator import OperatorError, RootOperator
-from clios.core.operator_fn import OperatorFn
+from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_info import Input, Output, Param
-from clios.core.registry import OperatorRegistry
 
 intOut = t.Annotated[int, Output(callback=print)]
 
@@ -112,11 +111,9 @@ def list_functions():
     return ff_functions
 
 
-operators = OperatorRegistry()
+operators = OperatorFns()
 for func in list_functions():
-    operators.add(
-        func.__name__, OperatorFn.validate(func, param_parser=CliParamParser())
-    )
+    operators[func.__name__] = OperatorFn.validate(func, param_parser=CliParamParser())
 
 
 execute_error = [

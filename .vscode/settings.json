@@ -1,7 +1,7 @@
 {
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.typeCheckingMode": "off",
     "[python]": {
         "diffEditor.ignoreTrimWhitespace": false,
         "editor.defaultFormatter": "charliermarsh.ruff",
@@ -10,5 +10,6 @@
             "source.organizeImports.ruff": "explicit"
         },
     },
-    "python.defaultInterpreterPath": ".venv/bin/python"
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "mypy.dmypyExecutable": "${workspaceFolder}/.venv/bin/dmypy"
 }
