@@ -51,7 +51,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
       - run: uv sync
-      - run: uv run ./scripts/lint.sh
+      - run: ./scripts/lint.sh
 
   test:
     needs:
@@ -81,7 +81,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
       - run: uv sync
-      - run: uv run ./scripts/test.sh
+      - run: ./scripts/test.sh
       - name: Create coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: uv run coverage xml
