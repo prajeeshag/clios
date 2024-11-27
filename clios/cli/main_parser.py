@@ -1,4 +1,5 @@
 import importlib.util
+import logging
 import typing as t
 from dataclasses import dataclass
 
@@ -24,6 +25,8 @@ from .tokenizer import (
     StringToken,
     Tokenizer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def simple_callback(value: t.Any) -> t.Any:
@@ -142,6 +145,9 @@ class CliParser(ParserAbc):
         input_tokens: list[Token],
     ) -> BaseOperator:
         try:
+            logger.debug(
+                f"parsing arguments for operator `{operator_name}`, param_string: {param_string}"
+            )
             args, kwds = operator_fn.param_parser.parse_arguments(
                 string=param_string,
                 parameters=operator_fn.parameters,

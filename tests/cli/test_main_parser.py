@@ -96,6 +96,10 @@ def op_2o() -> t.Annotated[int, Output(callback=print, num_outputs=2)]:
     return 1
 
 
+def selvar(name: t.Annotated[str, Param()]):
+    pass
+
+
 ops = {
     "op_": op_,
     "op_1o": op_1o,
@@ -116,6 +120,7 @@ ops = {
     "op_1i1k1o": op_1i1k1o,
     "op_1o_noroot": op_1o_noroot,
     "op_2o": op_2o,
+    "selvar": selvar,
 }
 operator_fns = OperatorFns()
 param_parser = StandardParamParser()
@@ -308,10 +313,18 @@ def test_get_synopsis():
     assert parser.get_synopsis(op_fn, "operator") == "operator i"
 
 
-def test_get_operator_passing():
+@pytest.mark.parametrize(
+    "input",
+    [
+        ["-op_1i1p1o,1", "1", "output"],
+        ["-selvar,precip"],
+    ],
+)
+def test_get_operator_passing(input):
     tokenizer = CliTokenizer()
     parser = CliParser(
         tokenizer=tokenizer,
     )
-    operator = parser.get_operator(operator_fns, ["-op_1i1p1o,1", "1", "output"])
+
+    operator = parser.get_operator(operator_fns, input)
     assert isinstance(operator, RootOperator)

@@ -139,6 +139,9 @@ class StandardParamParser(ParamParserAbc):
         # Find the first occurence of the kw_sep
         sep_index = string.find(self.kw_sep)
 
+        if sep_index < 1:
+            return None
+
         if not is_valid_variable_name(string[:sep_index]):
             return None
 

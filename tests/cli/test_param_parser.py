@@ -58,6 +58,10 @@ def op_1p(ip: intParam):
     pass
 
 
+def selvar(name: t.Annotated[str, Param()]):
+    pass
+
+
 def op_1K(*, ip: IntParam):
     pass
 
@@ -202,12 +206,20 @@ def test_parse_arguments_build_error(input, expected):
     assert str(e.value)
 
 
-def test_valid():
+@pytest.mark.parametrize(
+    "fn,input,expected",
+    [
+        [op_1p, "100", [(100,), ()]],
+        [selvar, "name", [("name",), ()]],
+        [op_1p1k, "1,ik=1", [(1,), (("ik", 1),)]],
+    ],
+)
+def test_valid(fn, input, expected):
     parser = StandardParamParser()
-    parameters = OperatorFn.from_def(op_1p1k, parser, implicit="param").parameters
-    param_values = parser.parse_arguments("1,ik=1", parameters)
-    assert param_values[0] == (1,)
-    assert param_values[1] == (("ik", 1),)
+    parameters = OperatorFn.from_def(fn, parser, implicit="param").parameters
+    param_values = parser.parse_arguments(input, parameters)
+    assert param_values[0] == expected[0]
+    assert param_values[1] == expected[1]
 
 
 def test_valid_single():
