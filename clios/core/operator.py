@@ -16,7 +16,7 @@ class OperatorError(Exception):
     def __str__(self) -> str:
         message = self.message
         if "error" in self.ctx:
-            message += f"\n{str(self.ctx['error'])}"
+            message += f"\n{self.ctx['error']}"
         return message
 
 
