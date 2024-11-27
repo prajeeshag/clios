@@ -220,7 +220,7 @@ class ReturnValue:
         type_adapter: TypeAdapter[t.Any]
         if _get_type(annotation) is None:
             type_adapter = TypeAdapter(None)
-            info = Output(info.callback, num_outputs=0)
+            info = Output(callback=info.callback, num_outputs=0)
         else:
             if t.get_origin(annotation) is t.Annotated:
                 if any(
@@ -230,7 +230,8 @@ class ReturnValue:
                     raise AssertionError(
                         "Only `BeforeValidator` is allowed on return value!"
                     )
-            annotation = t.Annotated[annotation, Strict()]
+            if info.strict:
+                annotation = t.Annotated[annotation, Strict()]
             type_adapter = TypeAdapter(
                 annotation, config=ConfigDict(arbitrary_types_allowed=True)
             )
