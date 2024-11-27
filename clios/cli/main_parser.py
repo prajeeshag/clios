@@ -1,3 +1,4 @@
+import importlib.util
 import typing as t
 from dataclasses import dataclass
 
@@ -16,7 +17,13 @@ from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_parser import ParamParserError
 from clios.core.tokenizer import Token
 
-from .tokenizer import CliTokenizer, OperatorToken, StringToken, Tokenizer
+from .tokenizer import (
+    CliTokenizer,
+    InlineOperatorToken,
+    OperatorToken,
+    StringToken,
+    Tokenizer,
+)
 
 
 def simple_callback(value: t.Any) -> t.Any:
@@ -27,11 +34,17 @@ def simple_callback(value: t.Any) -> t.Any:
 class CliParser(ParserAbc):
     tokenizer: Tokenizer[list[str]] = CliTokenizer()
 
-    def get_name(self, string: str) -> str:
-        return string.split(",")[0].strip("-")
+    def get_name(self, token: Token) -> str:
+        if isinstance(token, OperatorToken):
+            return token.value.split(",")[0].lstrip("-")
+        if isinstance(token, InlineOperatorToken):
+            return token.value.split(",")[0].lstrip("@")
+        return token.value
 
-    def get_param_string(self, string: str) -> str:
-        return ",".join(string.split(",")[1:])
+    def get_param_string(self, token: Token) -> str:
+        if isinstance(token, (OperatorToken, InlineOperatorToken)):
+            return ",".join(token.value.split(",")[1:])
+        return ""
 
     def get_operator(
         self,
@@ -45,9 +58,9 @@ class CliParser(ParserAbc):
         tokens = list(self.tokenizer.tokenize(input))
         num_tokens = len(tokens)
         token = tokens.pop(0)
-        operator_name = self.get_name(token.value)
-        param_string = self.get_param_string(token.value)
-        operator_fn = self._get_operator_fn(operator_fns, operator_name, 0)
+        operator_name = self.get_name(token)
+        param_string = self.get_param_string(token)
+        operator_fn = self._get_operator_fn(operator_fns, token, 0)
 
         num_outputs = 0
         if operator_fn.output.type_ is not None:
@@ -156,11 +169,11 @@ class CliParser(ParserAbc):
                 break
             child_token = input_tokens.pop()
             child_index += 1
-            if isinstance(child_token, OperatorToken):
-                child_op_name = self.get_name(child_token.value)
-                child_op_param_string = self.get_param_string(child_token.value)
+            if isinstance(child_token, (OperatorToken, InlineOperatorToken)):
+                child_op_name = self.get_name(child_token)
+                child_op_param_string = self.get_param_string(child_token)
                 child_op_fn = self._get_operator_fn(
-                    operator_fns, child_op_name, child_index
+                    operator_fns, child_token, child_index
                 )
                 in_type = input_param.type_
                 if in_type is not t.Any and in_type != child_op_fn.output.type_:
@@ -221,11 +234,55 @@ class CliParser(ParserAbc):
         )
 
     def _get_operator_fn(
-        self, operator_fns: OperatorFns, name: str, index: int
+        self,
+        operator_fns: OperatorFns,
+        token: Token,
+        index: int,
     ) -> OperatorFn:
+        name = self.get_name(token)
+        if isinstance(token, InlineOperatorToken):
+            return self._get_inline_operator_fn(name, index)
+
         op = operator_fns.get(name)
         if op is None:
             raise ParserError(
                 f"Operator `{name}` not found!", ctx={"token_index": index}
             )
         return op
+
+    def _get_inline_operator_fn(self, name: str, index: int) -> OperatorFn:
+        from pathlib import Path
+
+        module_path = Path(name)
+        module_name = module_path.stem
+        try:
+            module = load_module(module_name, module_path)
+        except (ModuleNotFoundError, FileNotFoundError):
+            raise ParserError(
+                f"Module `{name}` not found!",
+                ctx={"token_index": index},
+            )
+        operator_fn: OperatorFn | None = None
+
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if isinstance(attr, OperatorFn):
+                if operator_fn is not None:
+                    raise ParserError(
+                        f"Multiple OperatorFn found in module `{name}`!",
+                        ctx={"token_index": index},
+                    )
+                operator_fn = attr
+        if operator_fn is None:
+            raise ParserError(
+                f"No OperatorFn found in module `{name}`!",
+                ctx={"token_index": index},
+            )
+        return operator_fn
+
+
+def load_module(module_name, path):
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module

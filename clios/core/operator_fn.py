@@ -71,7 +71,7 @@ class OperatorFn:
         return []
 
     @classmethod
-    def validate(
+    def from_def(
         cls,
         func: t.Callable[..., t.Any],
         param_parser: ParamParserAbc,
@@ -118,7 +118,7 @@ class OperatorFns(dict[str, OperatorFn]):
     ) -> t.Callable[..., t.Any]:
         def _decorator(func: t.Callable[..., t.Any]):
             key = name if name else func.__name__
-            self[key] = OperatorFn.validate(
+            self[key] = OperatorFn.from_def(
                 func,
                 param_parser=param_parser,
                 implicit=implicit,

@@ -1,4 +1,3 @@
-import sys
 import typing as t
 
 import click
@@ -27,6 +26,20 @@ def output(input: t.Annotated[t.Any, Input()]) -> None:
 standard_param_parser = StandardParamParser()
 
 
+def operator(
+    *,
+    param_parser: ParamParserAbc = standard_param_parser,
+    implicit: t.Literal["input", "param"] = "input",
+) -> t.Callable[..., t.Any]:
+    def decorator(func: t.Callable[..., t.Any]) -> OperatorFn:
+        operator_fn = OperatorFn.from_def(
+            func, param_parser=param_parser, implicit=implicit
+        )
+        return operator_fn
+
+    return decorator
+
+
 class OperatorFns(OperatorFns_):
     @t.override
     def register(
@@ -42,7 +55,7 @@ class OperatorFns(OperatorFns_):
 class Clios:
     def __init__(self, operator_fns: OperatorFns_) -> None:
         self._operators = OperatorFns_()
-        self._operators["print"] = OperatorFn.validate(
+        self._operators["print"] = OperatorFn.from_def(
             output, param_parser=standard_param_parser
         )
         self._operators.update(operator_fns)
@@ -51,10 +64,19 @@ class Clios:
 
     def __call__(self):
         try:
-            args, options = _click_app(standalone_mode=False)
+            res = _click_app(standalone_mode=False)
         except click.exceptions.UsageError as e:
             print(e.format_message())
-            sys.exit(1)
+            with click.Context(_click_app) as ctx:
+                click.echo(_click_app.get_help(ctx))
+            raise SystemExit(1)
+
+        if isinstance(res, tuple):
+            args, options = res
+        elif res != 0:
+            raise SystemExit(res)
+        else:
+            return
 
         if options["list"]:
             return self._presenter.print_list()
@@ -62,11 +84,8 @@ class Clios:
             return self._presenter.print_detail(options["show"])
         if options["dry_run"]:
             return self._presenter.dry_run(args)
-        if args:
-            return self._presenter.run(args)
 
-        with click.Context(_click_app) as ctx:
-            click.echo(_click_app.get_help(ctx))
+        return self._presenter.run(args)
 
 
 @click.command(

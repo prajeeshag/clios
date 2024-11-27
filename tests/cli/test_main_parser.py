@@ -120,7 +120,7 @@ ops = {
 operator_fns = OperatorFns()
 param_parser = StandardParamParser()
 for name, op in ops.items():
-    operator_fns[name] = OperatorFn.validate(op, param_parser=param_parser)
+    operator_fns[name] = OperatorFn.from_def(op, param_parser=param_parser)
 
 
 invalids = [
@@ -131,6 +131,10 @@ invalids = [
     [
         ["-op_1i", "-op_not_found"],
         ParserError("Operator `op_not_found` not found!", ctx={"token_index": 1}),
+    ],
+    [
+        ["@op_1i.py"],
+        ParserError("Module `op_1i.py` not found!", ctx={"token_index": 0}),
     ],
     [
         ["-op_1i", "["],
@@ -227,6 +231,24 @@ validation_errors = [
     ],
 ]
 
+invalids_inline_operator = [
+    [
+        ["@inline_empty.py"],
+        ["inline_empty.py"],
+        ParserError(
+            "No OperatorFn found in module `inline_empty.py`!", ctx={"token_index": 0}
+        ),
+    ],
+    [
+        ["@inline_multiple.py"],
+        ["inline_multiple.py"],
+        ParserError(
+            "Multiple OperatorFn found in module `inline_multiple.py`!",
+            ctx={"token_index": 0},
+        ),
+    ],
+]
+
 
 @pytest.mark.parametrize("tokens, expected", invalids)
 def test_get_operator_invalid(tokens, expected):
@@ -234,6 +256,23 @@ def test_get_operator_invalid(tokens, expected):
     parser = CliParser(
         tokenizer=tokenizer,
     )
+    with pytest.raises(ParserError) as e:
+        parser.get_operator(operator_fns, tokens)
+    assert str(e.value) == str(expected)
+    assert e.value.ctx == expected.ctx
+
+
+@pytest.mark.parametrize("tokens, files_to_copy, expected", invalids_inline_operator)
+def test_get_operator_invalid_inline_operator(
+    tokens, files_to_copy, expected, copy_file
+):
+    tokenizer = CliTokenizer()
+    parser = CliParser(
+        tokenizer=tokenizer,
+    )
+    for file in files_to_copy:
+        copy_file(file)
+
     with pytest.raises(ParserError) as e:
         parser.get_operator(operator_fns, tokens)
     assert str(e.value) == str(expected)

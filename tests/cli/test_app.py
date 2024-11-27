@@ -11,10 +11,22 @@ def app():
     return OperatorFns()
 
 
+def test_click_app_help(app):
+    sys.argv = ["cli", "--help"]
+    result = Clios(app)()
+    assert result is None
+
+
 def test_click_app_list(app):
     sys.argv = ["cli", "--list"]
     result = Clios(app)()
     assert result is None
+
+
+def test_click_usage_error(app):
+    sys.argv = ["cli", "--show"]
+    with pytest.raises(SystemExit):
+        Clios(app)()
 
 
 def test_click_app_show(app):

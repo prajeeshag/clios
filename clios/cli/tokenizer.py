@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
-from clios.core.tokenizer import Token, TokenError, Tokenizer
+from clios.core.tokenizer import Token, Tokenizer
 
 
 @dataclass(frozen=True)
@@ -12,6 +12,16 @@ class StringToken(Token):
     @classmethod
     def match(cls, string: str) -> bool:
         return True
+
+
+@dataclass(frozen=True)
+class InlineOperatorToken(Token):
+    """An inline operator token will match any string starting with '@' and a valid python module file path"""
+
+    @classmethod
+    def match(cls, string: str) -> bool:
+        pattern = r"^@[a-zA-Z_][a-zA-Z0-9_]*\.py$"
+        return re.match(pattern, string) is not None
 
 
 @dataclass(frozen=True)
@@ -55,13 +65,12 @@ class TokenType(Enum):
     COLON = ColonToken
     LEFT_BRACKET = LeftBracketToken
     RIGHT_BRACKET = RightBracketToken
+    INLINE_OPERATOR = InlineOperatorToken
     OPERATOR = OperatorToken
     STRING = StringToken
 
     @classmethod
     def _missing_(cls, value: object) -> "TokenType":
-        if not isinstance(value, str):
-            raise TokenError("Invalid token type")
         for member in cls:
             if member.value.match(value) and member is not cls.STRING:
                 return member

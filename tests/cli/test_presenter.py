@@ -59,7 +59,7 @@ def get_presenter(mocker):
     def _presenter(fns):
         operator_fns = OperatorFns()
         for fn in fns:
-            operator_fns[fn.__name__] = OperatorFn.validate(
+            operator_fns[fn.__name__] = OperatorFn.from_def(
                 fn, param_parser=param_parser
             )
         return CliPresenter(operator_fns=operator_fns, parser=CliParser())

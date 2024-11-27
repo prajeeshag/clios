@@ -113,7 +113,7 @@ def list_functions():
 
 operators = OperatorFns()
 for func in list_functions():
-    operators[func.__name__] = OperatorFn.validate(
+    operators[func.__name__] = OperatorFn.from_def(
         func, param_parser=StandardParamParser()
     )
 
@@ -182,3 +182,10 @@ def test_output_validation_failed():
 
     with pytest.raises(OperatorError):
         op1.execute()
+
+
+def test_draw_inline(copy_file):
+    parser = CliParser()
+    copy_file("inline_valid.py")
+    op = parser.get_operator(operator_fns=operators, input=["@inline_valid.py", "1"])
+    assert op.draw() == "[ inline_valid.py [ 1 ] ]"
