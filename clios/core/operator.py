@@ -94,7 +94,14 @@ class BaseOperator(OperatorAbc):
     def execute(self) -> Any:
         arg_values = self._validate_arguments()
         kwds_values = self._validate_keywords()
-        value = self.operator_fn.callback(*arg_values, **kwds_values)
+        try:
+            value = self.operator_fn.callback(*arg_values, **kwds_values)
+        except Exception as e:
+            raise OperatorError(
+                f"An error occurred while executing operator `{self.name}`!",
+                ctx={"error": e},
+            )
+
         try:
             return self.operator_fn.output.validator.validate_python(value)
         except ValidationError as e:
@@ -141,7 +148,15 @@ class Operator(BaseOperator):
         kwds_values = self._validate_keywords()
         input_values = self._validate_execute_inputs()
         positional_args = self._compose_arg_values(arg_values, input_values)
-        value = self.operator_fn.callback(*positional_args, **kwds_values)
+
+        try:
+            value = self.operator_fn.callback(*positional_args, **kwds_values)
+        except Exception as e:
+            raise OperatorError(
+                f"An error occurred while executing operator `{self.name}`!",
+                ctx={"error": e},
+            )
+
         try:
             return self.operator_fn.output.validator.validate_python(value)
         except ValidationError as e:
