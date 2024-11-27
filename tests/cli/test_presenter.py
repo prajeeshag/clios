@@ -5,7 +5,7 @@ import pytest
 from typing_extensions import Doc
 
 from clios.cli.main_parser import CliParser
-from clios.cli.param_parser import CliParamParser
+from clios.cli.param_parser import StandardParamParser
 from clios.cli.presenter import CliPresenter
 from clios.core.main_parser import ParserError
 from clios.core.operator_fn import OperatorFn, OperatorFns
@@ -54,7 +54,7 @@ def operator1(
 
 @pytest.fixture
 def get_presenter(mocker):
-    param_parser = CliParamParser()
+    param_parser = StandardParamParser()
 
     def _presenter(fns):
         operator_fns = OperatorFns()

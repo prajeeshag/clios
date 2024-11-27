@@ -5,7 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from clios.cli.main_parser import CliParser, ParserError
-from clios.cli.param_parser import CliParamParser, ParamParserError
+from clios.cli.param_parser import ParamParserError, StandardParamParser
 from clios.cli.tokenizer import CliTokenizer
 from clios.core.operator import RootOperator
 from clios.core.operator_fn import OperatorFn, OperatorFns
@@ -118,7 +118,7 @@ ops = {
     "op_2o": op_2o,
 }
 operator_fns = OperatorFns()
-param_parser = CliParamParser()
+param_parser = StandardParamParser()
 for name, op in ops.items():
     operator_fns[name] = OperatorFn.validate(op, param_parser=param_parser)
 

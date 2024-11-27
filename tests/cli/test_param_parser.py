@@ -4,7 +4,7 @@ import typing as t
 import pytest
 from pydantic import ValidationError
 
-from clios.cli.param_parser import CliParamParser
+from clios.cli.param_parser import StandardParamParser
 from clios.core.operator_fn import OperatorFn
 from clios.core.param_info import Input, Output, Param
 from clios.core.param_parser import ParamParserError as ParserError
@@ -178,7 +178,7 @@ build_error = [
 
 @pytest.mark.parametrize("input,expected", invalid_operators)
 def test_parse_arguments(input, expected):
-    parser = CliParamParser()
+    parser = StandardParamParser()
     parameters = OperatorFn.validate(input[1], parser).parameters
 
     with pytest.raises(ParserError) as e:
@@ -189,7 +189,7 @@ def test_parse_arguments(input, expected):
 
 @pytest.mark.parametrize("input,expected", build_error)
 def test_parse_arguments_build_error(input, expected):
-    parser = CliParamParser()
+    parser = StandardParamParser()
     parameters = OperatorFn.validate(input[1], parser).parameters
 
     with pytest.raises(ParserError) as e:
@@ -203,7 +203,7 @@ def test_parse_arguments_build_error(input, expected):
 
 
 def test_valid():
-    parser = CliParamParser()
+    parser = StandardParamParser()
     parameters = OperatorFn.validate(op_1p1k, parser, implicit="param").parameters
     param_values = parser.parse_arguments("1,ik=1", parameters)
     assert param_values[0] == (1,)
@@ -211,14 +211,14 @@ def test_valid():
 
 
 def test_valid_single():
-    parser = CliParamParser()
+    parser = StandardParamParser()
     parameters = OperatorFn.validate(op_1i1p1o, parser).parameters
     param_values = parser.parse_arguments("1", parameters)
     assert param_values[0] == (1,)
 
 
 def test_get_synopsis():
-    parser = CliParamParser()
+    parser = StandardParamParser()
 
     def fn(
         input: int,

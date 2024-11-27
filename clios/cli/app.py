@@ -1,17 +1,20 @@
 import sys
-from typing import Annotated, Any, Callable, Literal
+import typing as t
 
 import click
 from rich import print
 
-from ..core.operator_fn import OperatorFn, OperatorFns
+from clios.core.param_parser import ParamParserAbc
+
+from ..core.operator_fn import OperatorFn
+from ..core.operator_fn import OperatorFns as OperatorFns_
 from ..core.param_info import Input
 from .main_parser import CliParser
-from .param_parser import CliParamParser
+from .param_parser import StandardParamParser
 from .presenter import CliPresenter
 
 
-def output(input: Annotated[Any, Input()]) -> None:
+def output(input: t.Annotated[t.Any, Input()]) -> None:
     """
     Print the given input data to the terminal.
 
@@ -21,50 +24,30 @@ def output(input: Annotated[Any, Input()]) -> None:
     print(input)
 
 
-@click.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
-@click.option("--list", type=bool, help="List all available operators", is_flag=True)
-@click.option(
-    "--show", type=str, help="Show the help information for the given operator", nargs=1
-)
-@click.option(
-    "--dry-run", type=bool, help="Dry run: prints the call tree", is_flag=True
-)
-@click.pass_context
-def _click_app(ctx: Any, **kwargs: Any) -> tuple[list[str], dict[str, Any]]:
-    return ctx.args, kwargs
+standard_param_parser = StandardParamParser()
 
 
-default_param_parser = CliParamParser()
+class OperatorFns(OperatorFns_):
+    @t.override
+    def register(
+        self,
+        *,
+        name: str = "",
+        param_parser: ParamParserAbc = standard_param_parser,
+        implicit: t.Literal["input", "param"] = "input",
+    ) -> t.Callable[..., t.Any]:
+        return super().register(name=name, param_parser=param_parser, implicit=implicit)
 
 
 class Clios:
-    def __init__(self) -> None:
-        self._operators = OperatorFns()
-        self._parser = CliParser()
+    def __init__(self, operator_fns: OperatorFns_) -> None:
+        self._operators = OperatorFns_()
         self._operators["print"] = OperatorFn.validate(
-            output, param_parser=default_param_parser
+            output, param_parser=standard_param_parser
         )
+        self._operators.update(operator_fns)
+        self._parser = CliParser()
         self._presenter = CliPresenter(self._operators, self._parser)
-
-    def operator(
-        self,
-        name: str = "",
-        param_parser: CliParamParser = default_param_parser,
-        implicit: Literal["input", "param"] = "input",
-    ) -> Any:
-        def decorator(func: Callable[..., Any]):
-            op_obj = OperatorFn.validate(
-                func,
-                param_parser=param_parser,
-                implicit=implicit,
-            )
-            key = name if name else func.__name__
-            self._operators[key] = op_obj
-            return func
-
-        return decorator
 
     def __call__(self):
         try:
@@ -84,4 +67,18 @@ class Clios:
 
         with click.Context(_click_app) as ctx:
             click.echo(_click_app.get_help(ctx))
-        # self.presenter.print_list()
+
+
+@click.command(
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
+)
+@click.option("--list", type=bool, help="List all available operators", is_flag=True)
+@click.option(
+    "--show", type=str, help="Show the help information for the given operator", nargs=1
+)
+@click.option(
+    "--dry-run", type=bool, help="Dry run: prints the call tree", is_flag=True
+)
+@click.pass_context
+def _click_app(ctx: t.Any, **kwargs: t.Any) -> tuple[list[str], dict[str, t.Any]]:
+    return ctx.args, kwargs

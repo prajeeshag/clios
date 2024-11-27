@@ -12,7 +12,7 @@ from clios.core.parameter import Parameters
 
 
 @dataclass(frozen=True)
-class CliParamParser(ParamParserAbc):
+class StandardParamParser(ParamParserAbc):
     arg_sep: str = ","
     kw_sep: str = "="
     """
