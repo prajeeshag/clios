@@ -304,13 +304,13 @@ def test_get_synopsis():
         tokenizer=tokenizer,
     )
     op_fn = operator_fns.get("op_1i1p1o")
-    assert parser.get_synopsis(op_fn, "operator") == "operator,ip i output"
+    assert parser.get_synopsis(op_fn, "operator") == " -operator,ip i output"
 
     op_fn = operator_fns.get("op_2o")
-    assert parser.get_synopsis(op_fn, "operator") == "operator output1 output2"
+    assert parser.get_synopsis(op_fn, "operator") == " -operator output1 output2"
 
     op_fn = operator_fns.get("op_1i")
-    assert parser.get_synopsis(op_fn, "operator") == "operator i"
+    assert parser.get_synopsis(op_fn, "operator") == " -operator i"
 
 
 @pytest.mark.parametrize(

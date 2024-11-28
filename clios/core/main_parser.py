@@ -51,7 +51,12 @@ class ParserAbc(ABC):
         """
 
     @abstractmethod
-    def get_synopsis(self, operator_fn: OperatorFn, operator_name: str) -> str:
+    def get_synopsis(
+        self,
+        operator_fn: OperatorFn,
+        operator_name: str,
+        **kwds: t.Any,
+    ) -> str:
         """
         Get the synopsis of an operator
 

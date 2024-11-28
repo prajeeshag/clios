@@ -229,10 +229,11 @@ def test_valid_single():
     assert param_values[0] == (1,)
 
 
-def test_get_synopsis():
+def get_synopsis_input():
     parser = StandardParamParser()
+    res = []
 
-    def fn(
+    def fn1(
         input: int,
         p1: intParam,
         p2: intParam = 10,
@@ -243,6 +244,24 @@ def test_get_synopsis():
     ) -> int:
         pass
 
-    expected = "p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]"
-    parameters = OperatorFn.from_def(fn, parser).parameters
-    assert parser.get_synopsis(parameters) == expected
+    res.append(
+        [
+            parser,
+            OperatorFn.from_def(fn1, parser).parameters,
+            ",p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]",
+        ]
+    )
+
+    def fn2(
+        p2: intParam = 10,
+    ) -> int:
+        pass
+
+    res.append([parser, OperatorFn.from_def(fn2, parser).parameters, "[,p2]"])
+
+    return res
+
+
+@pytest.mark.parametrize("parser, parameters, expected", get_synopsis_input())
+def test_get_synopsis(parser, parameters, expected):
+    assert parser.get_synopsis(parameters, lsep=",") == expected

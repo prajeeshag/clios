@@ -147,7 +147,7 @@ class StandardParamParser(ParamParserAbc):
 
         return string[:sep_index], string[sep_index + 1 :]
 
-    def get_synopsis(self, parameters: Parameters) -> str:
+    def get_synopsis(self, parameters: Parameters, lsep="", **kwds: t.Any) -> str:
         """get the synopsis of the operator function parameters"""
         required_positional_params: str = ""
         optional_positional_params: str = ""
@@ -182,7 +182,17 @@ class StandardParamParser(ParamParserAbc):
 
         if optional_keyword_params:
             res += f"[{optional_keyword_params}]"
+
         res = res.strip(self.arg_sep)
+
+        if not res:
+            return res
+
+        if res[0] == "[":
+            res = f"[{lsep}{res[2:]}"
+        else:
+            res = f"{lsep}{res}"
+
         return res
 
 

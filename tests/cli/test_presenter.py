@@ -121,7 +121,7 @@ def test_print_detail(
     mock_panel.assert_has_calls(
         [
             mocker.call(
-                "operator1,param1[,param2=<val>] input1 input2 output",
+                " -operator1,param1[,param2=<val>] input1 input2 output",
                 title="Synopsis",
                 style="bold yellow",
                 title_align="left",
