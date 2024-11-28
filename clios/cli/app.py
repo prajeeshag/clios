@@ -47,7 +47,7 @@ class OperatorFns(OperatorFns_):
         *,
         name: str = "",
         param_parser: ParamParserAbc = standard_param_parser,
-        implicit: t.Literal["input", "param"] = "input",
+        implicit: t.Literal["input", "param"] = "param",
     ) -> t.Callable[..., t.Any]:
         return super().register(name=name, param_parser=param_parser, implicit=implicit)
 

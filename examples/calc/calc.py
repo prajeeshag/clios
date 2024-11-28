@@ -5,37 +5,37 @@ from clios import OperatorFns, Output, Param
 operators = OperatorFns()
 
 
-@operators.register()
+@operators.register(implicit="input")
 def add(input1: float, input2: float) -> float:
     """Add two numbers."""
     return input1 + input2
 
 
-@operators.register()
+@operators.register(implicit="input")
 def sub(input1: float, input2: float) -> float:
     """Subtract two numbers."""
     return input1 - input2
 
 
-@operators.register()
+@operators.register(implicit="input")
 def mul(input1: float, input2: float) -> float:
     """Multiply two numbers."""
     return input1 * input2
 
 
-@operators.register()
+@operators.register(implicit="input")
 def div(input1: float, input2: float) -> float:
     """Divide two numbers."""
     return input1 / input2
 
 
-@operators.register()
+@operators.register(implicit="input")
 def sqrt(input: float) -> float:
     """Calculate the square root of a number."""
     return input**0.5
 
 
-@operators.register()
+@operators.register(implicit="input")
 def mean(*inputs: float) -> float:
     """Calculate the mean of a list of numbers."""
     return sum(inputs) / len(inputs)
