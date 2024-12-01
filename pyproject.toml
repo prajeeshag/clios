@@ -23,7 +23,7 @@ repository = "https://github.com/prajeeshag/clios"
 documentation = "https://prajeeshag.github.io/clios"
 
 [project.scripts]
-clios = "clios.cli:main"
+clios = "clios:main"
 
 [tool.pdm.build]
 excludes = ["tests", "examples"]
