@@ -138,7 +138,7 @@ invalids = [
         ParserError("Operator `op_not_found` not found!", ctx={"token_index": 1}),
     ],
     [
-        ["@op_1i.py"],
+        ["-op_1i.py"],
         ParserError("Module `op_1i.py` not found!", ctx={"token_index": 0}),
     ],
     [
@@ -238,14 +238,14 @@ validation_errors = [
 
 invalids_inline_operator = [
     [
-        ["@inline_empty.py"],
+        ["-inline_empty.py"],
         ["inline_empty.py"],
         ParserError(
             "No OperatorFn found in module `inline_empty.py`!", ctx={"token_index": 0}
         ),
     ],
     [
-        ["@inline_multiple.py"],
+        ["-inline_multiple.py"],
         ["inline_multiple.py"],
         ParserError(
             "Multiple OperatorFn found in module `inline_multiple.py`!",

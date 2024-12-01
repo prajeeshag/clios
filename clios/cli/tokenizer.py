@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 from clios.core.tokenizer import Token, Tokenizer
 
@@ -15,23 +16,18 @@ class StringToken(Token):
 
 
 @dataclass(frozen=True)
-class InlineOperatorToken(Token):
-    """An inline operator token will match any string starting with '@' and a valid python module file path"""
-
-    @classmethod
-    def match(cls, string: str) -> bool:
-        pattern = r"^@[a-zA-Z_][a-zA-Z0-9_]*\.py$"
-        return re.match(pattern, string) is not None
-
-
-@dataclass(frozen=True)
 class OperatorToken(Token):
     """An operator token will match any string starting with '-'"""
 
     @classmethod
     def match(cls, string: str) -> bool:
-        pattern = r"^-[a-zA-Z]"
-        return re.match(pattern, string) is not None
+        if string[0] != "-":
+            return False
+        name = Path(string[1:]).name
+        pattern = r"^[a-zA-Z_]"
+        if re.match(pattern, name) is not None:
+            return True
+        return False
 
 
 @dataclass(frozen=True)
@@ -65,7 +61,6 @@ class TokenType(Enum):
     COLON = ColonToken
     LEFT_BRACKET = LeftBracketToken
     RIGHT_BRACKET = RightBracketToken
-    INLINE_OPERATOR = InlineOperatorToken
     OPERATOR = OperatorToken
     STRING = StringToken
 

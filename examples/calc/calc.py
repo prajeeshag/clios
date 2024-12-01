@@ -5,6 +5,12 @@ from clios import OperatorFns, Output, Param
 operators = OperatorFns()
 
 
+@operators.register(name="print", implicit="input")
+def print_(input: Any) -> None:
+    """Print the given input data to the terminal."""
+    print(input)
+
+
 @operators.register(implicit="input")
 def add(input1: float, input2: float) -> float:
     """Add two numbers."""

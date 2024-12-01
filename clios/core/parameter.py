@@ -1,4 +1,5 @@
 # from dataclasses import dataclass
+import enum
 import inspect as i
 import typing as t
 from dataclasses import dataclass
@@ -89,6 +90,14 @@ class Parameter:
     execute_phase_validator: TypeAdapter[t.Any]
     description: str
     default: t.Any
+
+    @property
+    def choices(self) -> list[t.Any]:
+        if t.get_origin(_get_type(self.annotation)) is t.Literal:
+            return list(t.get_args(_get_type(self.annotation)))
+        if issubclass(_get_type(self.annotation), enum.Enum):
+            return [choice.value for choice in _get_type(self.annotation)]
+        return []
 
     @classmethod
     def validate(cls, param: i.Parameter, implicit: str) -> "Parameter":
@@ -346,5 +355,6 @@ def _is_not_supported(type_: t.Any) -> bool:
         tuple,
         frozenset,
     ]
-
+    if t.get_origin(type_) is t.Literal:
+        return False
     return not isinstance(type_, type) or type_ in _builtin_generic_types

@@ -184,8 +184,12 @@ def test_output_validation_failed():
         op1.execute()
 
 
-def test_draw_inline(copy_file):
+def test_draw_inline(copy_file, request):
     parser = CliParser()
     copy_file("inline_valid.py")
-    op = parser.get_operator(operator_fns=operators, input=["@inline_valid.py", "1"])
+    file_path = request.path.parent / "inline_valid.py"
+    op_string = f"-{file_path}"
+    op = parser.get_operator(operator_fns=operators, input=["-inline_valid.py", "1"])
+    op1 = parser.get_operator(operator_fns=operators, input=[op_string, "1"])
     assert op.draw() == "[ inline_valid.py [ 1 ] ]"
+    assert op1.draw() == f"[ {file_path} [ 1 ] ]"

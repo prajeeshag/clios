@@ -104,6 +104,9 @@ class CliPresenter:
         )
         data = [(name, op.short_description) for name, op in self.operator_fns.items()]
         # Add columns with dynamic width for the second column
+        if not data:
+            console.print("No operators found!", style="bold red")
+            return
         column1_width = max(len(row[0]) for row in data)
         column1_width = max(len("Operator"), column1_width)
         table.add_column(
@@ -125,7 +128,7 @@ class CliPresenter:
         try:
             op_fn = self.operator_fns[name]
         except KeyError:
-            print(f"Operator `{name}` not found!")
+            console.print(f"Operator `{name}` not found!", style="bold red")
             raise SystemExit(1)
 
         synopsis = self.parser.get_synopsis(op_fn, name)
@@ -151,6 +154,9 @@ class CliPresenter:
             if param.default is param.empty:
                 doc["default_value"] = ""
             doc["description"] = param.description
+            doc["choices"] = ""
+            if param.choices:
+                doc["choices"] = ", ".join(param.choices)
             docs.append(doc)
 
         # Synopsis
@@ -244,6 +250,9 @@ def _create_param_table(args_doc: list[dict[str, str]], title: str) -> Table:
     for doc in args_doc:
         description = doc["description"]
         default_value = doc["default_value"]
+        choices = doc["choices"]
+        if choices != "":
+            description += f" Choices: {choices}"
         if default_value != "":
             description += f" (default: {default_value})"
         param_table.add_row(

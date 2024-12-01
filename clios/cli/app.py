@@ -7,21 +7,9 @@ from clios.core.param_parser import ParamParserAbc
 
 from ..core.operator_fn import OperatorFn
 from ..core.operator_fn import OperatorFns as OperatorFns_
-from ..core.param_info import Input
 from .main_parser import CliParser
 from .param_parser import StandardParamParser
 from .presenter import CliPresenter
-
-
-def output(input: t.Annotated[t.Any, Input()]) -> None:
-    """
-    Print the given input data to the terminal.
-
-    description:
-        It uses the `rich` library to print the data in a formatted way.
-    """
-    print(input)
-
 
 standard_param_parser = StandardParamParser()
 
@@ -54,11 +42,7 @@ class OperatorFns(OperatorFns_):
 
 class Clios:
     def __init__(self, operator_fns: OperatorFns_) -> None:
-        self._operators = OperatorFns_()
-        self._operators["print"] = OperatorFn.from_def(
-            output, param_parser=standard_param_parser
-        )
-        self._operators.update(operator_fns)
+        self._operators = operator_fns
         self._parser = CliParser()
         self._presenter = CliPresenter(self._operators, self._parser)
 

@@ -1,7 +1,9 @@
 import importlib.util
 import logging
+import re
 import typing as t
 from dataclasses import dataclass
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -20,7 +22,6 @@ from clios.core.tokenizer import Token
 
 from .tokenizer import (
     CliTokenizer,
-    InlineOperatorToken,
     OperatorToken,
     StringToken,
     Tokenizer,
@@ -40,14 +41,19 @@ class CliParser(ParserAbc):
     def get_name(self, token: Token) -> str:
         if isinstance(token, OperatorToken):
             return token.value.split(",")[0].lstrip("-")
-        if isinstance(token, InlineOperatorToken):
-            return token.value.split(",")[0].lstrip("@")
         return token.value
 
     def get_param_string(self, token: Token) -> str:
-        if isinstance(token, (OperatorToken, InlineOperatorToken)):
+        if isinstance(token, OperatorToken):
             return ",".join(token.value.split(",")[1:])
         return ""
+
+    def is_inline_operator(self, token: Token) -> bool:
+        if isinstance(token, OperatorToken):
+            name = Path(self.get_name(token)).name
+            pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*\.py$"
+            return re.match(pattern, name) is not None
+        return False
 
     def get_operator(
         self,
@@ -182,7 +188,7 @@ class CliParser(ParserAbc):
                 break
             child_token = input_tokens.pop()
             child_index += 1
-            if isinstance(child_token, (OperatorToken, InlineOperatorToken)):
+            if isinstance(child_token, OperatorToken):
                 child_op_name = self.get_name(child_token)
                 child_op_param_string = self.get_param_string(child_token)
                 child_op_fn = self._get_operator_fn(
@@ -253,7 +259,8 @@ class CliParser(ParserAbc):
         index: int,
     ) -> OperatorFn:
         name = self.get_name(token)
-        if isinstance(token, InlineOperatorToken):
+
+        if self.is_inline_operator(token):
             return self._get_inline_operator_fn(name, index)
 
         op = operator_fns.get(name)
