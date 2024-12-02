@@ -85,7 +85,7 @@ wheels = [
 
 [[package]]
 name = "clios"
-version = "0.3.0a4.dev3+g38495fc.d20241201"
+version = "0.3.0a4.dev4+g7a46a4e.d20241202"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

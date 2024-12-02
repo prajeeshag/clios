@@ -60,7 +60,7 @@ class BaseOperator(OperatorAbc):
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
         return arg_values
 
@@ -73,7 +73,7 @@ class BaseOperator(OperatorAbc):
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
         return arg_values
 
@@ -99,7 +99,7 @@ class BaseOperator(OperatorAbc):
         except Exception as e:
             raise OperatorError(
                 f"An error occurred while executing operator `{self.name}`!",
-                ctx={"error": e},
+                ctx={"error": e, "index": self.index, "name": self.name},
             )
 
         try:
@@ -109,6 +109,7 @@ class BaseOperator(OperatorAbc):
                 f"Data validation failed for the output of operator `{self.name}`!\n"
                 + f"Error: {e}\n"
                 + "It's a bug! Please report it!",
+                ctx={"index": self.index, "name": self.name},
             )
 
     def draw(self) -> str:
@@ -138,7 +139,7 @@ class Operator(BaseOperator):
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the input of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
             input_values.append(value)
         return input_values
@@ -154,7 +155,7 @@ class Operator(BaseOperator):
         except Exception as e:
             raise OperatorError(
                 f"An error occurred while executing operator `{self.name}`!",
-                ctx={"error": e},
+                ctx={"error": e, "index": self.index, "name": self.name},
             )
 
         try:
@@ -164,6 +165,7 @@ class Operator(BaseOperator):
                 f"Data validation failed for the output of operator `{self.name}`!\n"
                 + f"Error: {e}\n"
                 + "It's a bug! Please report it!",
+                ctx={"index": self.index, "name": self.name},
             )
 
     def draw(self) -> str:

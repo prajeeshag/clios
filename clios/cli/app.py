@@ -68,14 +68,15 @@ class Clios:
             return self._presenter.print_detail(options["show"])
         if options["dry_run"]:
             return self._presenter.dry_run(args)
-
-        return self._presenter.run(args)
+        debug = options["debug"]
+        return self._presenter.run(args, debug)
 
 
 @click.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
 @click.option("--list", type=bool, help="List all available operators", is_flag=True)
+@click.option("--debug", type=bool, help="Turn on debugging", is_flag=True)
 @click.option(
     "--show", type=str, help="Show the help information for the given operator", nargs=1
 )

@@ -224,7 +224,7 @@ class CliPresenter:
             raise SystemExit(1)
         console.print(operator.draw())
 
-    def run(self, args: list[str]):
+    def run(self, args: list[str], debug: bool = False):
         """
         Run the operator function with the given arguments.
         """
@@ -232,12 +232,16 @@ class CliPresenter:
             operator = self.parser.get_operator(self.operator_fns, args)
         except ParserError as e:
             self.process_error(e, args)
+            if debug:
+                raise e
             raise SystemExit(1)
 
         try:
             operator.execute()
         except OperatorError as e:
             Console().print(Text(str(e), style="bold red"))
+            if debug:
+                raise e
             raise SystemExit(1)
 
 
