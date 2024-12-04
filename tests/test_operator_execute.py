@@ -53,6 +53,10 @@ def op_vi(*i: intIn):
     pass
 
 
+def op_vi1o(*i: intIn) -> intOut:
+    return 1
+
+
 def op_1k(*, ip: intParam):
     pass
 
@@ -156,6 +160,12 @@ valid = [
     [["-op_vi", "1", "1", "1", "1"], "[ op_vi [ 1 1 1 1 ] ]"],
     [["-op_vp,1,1,1,1,1"], "[ op_vp ]"],
     [["-op_1i1p,1", "1"], "[ op_1i1p [ 1 ] ]"],
+    [list("-op_vi [ 1 2 3 4 5 ]".split()), "[ op_vi [ 1 2 3 4 5 ] ]"],
+    [list("-op_vi [ -op_vi1o [ 1 2 3 ] ]".split()), "[ op_vi [ op_vi1o [ 1 2 3 ] ] ]"],
+    [
+        list("-op_vi [ -op_vi1o [ 1 2 3 ] -op_vi1o [ 4 5 6 ] ]".split()),
+        "[ op_vi [ op_vi1o [ 1 2 3 ] op_vi1o [ 4 5 6 ] ] ]",
+    ],
 ]
 
 

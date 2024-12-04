@@ -143,6 +143,10 @@ invalids = [
     ],
     [
         ["-op_1i", "["],
+        ParserError("Missing closing bracket!", ctx={"token_index": 1}),
+    ],
+    [
+        ["-op_1i", ":"],
         ParserError("This syntax is not supported yet!", ctx={"token_index": 1}),
     ],
     [
@@ -207,6 +211,10 @@ invalids = [
     ],
     [
         ["op_vi"],
+        ParserError("Missing inputs for operator op_vi!", ctx={"token_index": 0}),
+    ],
+    [
+        ["op_vi", "[", "]"],
         ParserError("Missing inputs for operator op_vi!", ctx={"token_index": 0}),
     ],
     [

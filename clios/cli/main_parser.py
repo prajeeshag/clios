@@ -22,7 +22,9 @@ from clios.core.tokenizer import Token
 
 from .tokenizer import (
     CliTokenizer,
+    LeftBracketToken,
     OperatorToken,
+    RightBracketToken,
     StringToken,
     Tokenizer,
 )
@@ -122,32 +124,6 @@ class CliParser(ParserAbc):
             args=tuple(output_file_paths),
         )
 
-    def get_synopsis(
-        self,
-        operator_fn: OperatorFn,
-        operator_name: str,
-        command_name="",
-        **kwds: t.Any,
-    ) -> str:
-        op = operator_fn
-        param_synopsis = op.param_parser.get_synopsis(op.parameters, lsep=",")
-        input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
-        output_synopsis = " ".join(
-            [f"output{i+1}" for i in range(op.output.info.num_outputs)]
-        )
-        if op.output.info.num_outputs == 1:
-            output_synopsis = "output"
-
-        synopsis = command_name
-        synopsis += f" -{operator_name}"
-        if param_synopsis:
-            synopsis += param_synopsis
-        if input_synopsis:
-            synopsis += f" {input_synopsis}"
-        if output_synopsis:
-            synopsis += f" {output_synopsis}"
-        return synopsis
-
     def _get_operator(
         self,
         operator_fns: OperatorFns,
@@ -180,6 +156,53 @@ class CliParser(ParserAbc):
                 kwds=kwds,
             )
 
+        if not input_tokens:
+            raise ParserError(
+                f"Missing inputs for operator {operator_name}!",
+                ctx={"token_index": token_index},
+            )
+        operator_token_index = token_index
+        if isinstance(input_tokens[-1], LeftBracketToken):
+            input_tokens.pop()
+            token_index += 1
+            child_tokens = self._get_bracketed_tokens(input_tokens, token_index)
+            child_operators = self._parse_child_operators(
+                operator_fns,
+                operator_fn,
+                token_index,
+                child_tokens,
+            )
+            token_index += len(child_tokens) + 1
+        else:
+            child_operators = self._parse_child_operators(
+                operator_fns,
+                operator_fn,
+                token_index,
+                input_tokens,
+            )
+
+        if len(child_operators) < operator_fn.parameters.num_minimum_inputs:
+            raise ParserError(
+                f"Missing inputs for operator {operator_name}!",
+                ctx={"token_index": operator_token_index},
+            )
+
+        return Operator(
+            name=operator_name,
+            index=token_index,
+            operator_fn=operator_fn,
+            inputs=tuple(child_operators),
+            args=args,
+            kwds=kwds,
+        )
+
+    def _parse_child_operators(
+        self,
+        operator_fns: OperatorFns,
+        operator_fn: OperatorFn,
+        token_index: int,
+        input_tokens: list[Token],
+    ):
         child_operators: list[OperatorAbc] = []
 
         child_index = token_index
@@ -237,20 +260,33 @@ class CliParser(ParserAbc):
                     ctx={"token_index": child_index},
                 )
 
-        if len(child_operators) < operator_fn.parameters.num_minimum_inputs:
-            raise ParserError(
-                f"Missing inputs for operator {operator_name}!",
-                ctx={"token_index": token_index},
-            )
+        return child_operators
 
-        return Operator(
-            name=operator_name,
-            index=token_index,
-            operator_fn=operator_fn,
-            inputs=tuple(child_operators),
-            args=args,
-            kwds=kwds,
+    def get_synopsis(
+        self,
+        operator_fn: OperatorFn,
+        operator_name: str,
+        command_name="",
+        **kwds: t.Any,
+    ) -> str:
+        op = operator_fn
+        param_synopsis = op.param_parser.get_synopsis(op.parameters, lsep=",")
+        input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
+        output_synopsis = " ".join(
+            [f"output{i+1}" for i in range(op.output.info.num_outputs)]
         )
+        if op.output.info.num_outputs == 1:
+            output_synopsis = "output"
+
+        synopsis = command_name
+        synopsis += f" -{operator_name}"
+        if param_synopsis:
+            synopsis += param_synopsis
+        if input_synopsis:
+            synopsis += f" {input_synopsis}"
+        if output_synopsis:
+            synopsis += f" {output_synopsis}"
+        return synopsis
 
     def _get_operator_fn(
         self,
@@ -299,6 +335,27 @@ class CliParser(ParserAbc):
                 ctx={"token_index": index},
             )
         return operator_fn
+
+    def _get_bracketed_tokens(
+        self, tokens: list[Token], opening_index: int
+    ) -> list[Token]:
+        """Get tokens until closing bracket is found"""
+        bracket_stack: list[Token] = []
+        token_stack: list[Token] = []
+        while tokens:
+            token = tokens.pop()
+            token_stack.append(token)
+            if isinstance(token, LeftBracketToken):
+                bracket_stack.append(token)
+            elif isinstance(token, RightBracketToken):
+                if not bracket_stack:
+                    return list(reversed(token_stack[:-1]))
+                bracket_stack.pop()
+
+        raise ParserError(
+            "Missing closing bracket!",
+            ctx={"token_index": opening_index},
+        )
 
 
 def load_module(module_name, path):
