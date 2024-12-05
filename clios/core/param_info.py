@@ -8,8 +8,8 @@ from pydantic.dataclasses import dataclass
 class _ParamInfoBase:
     strict: bool = False
     build_phase_validators: tuple[Callable[[Any], Any], ...] = ()
-    execute_phase_validators: tuple[Callable[[Any], Any], ...] = ()
-    core_validation_phase: Literal["build", "execute"] = "build"
+    type_converters: tuple[Callable[[Any], Any], ...] = ()
+    type_conversion_phase: Literal["build", "execute"] = "build"
 
 
 @dataclass(frozen=True)
