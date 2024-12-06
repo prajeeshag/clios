@@ -19,6 +19,7 @@ class OperatorFn:
     output: ReturnValue
     callback: t.Callable[..., t.Any]
     param_parser: ParamParserAbc
+    is_delegate: bool = False
 
     @property
     def short_description(self):
@@ -75,7 +76,8 @@ class OperatorFn:
         cls,
         func: t.Callable[..., t.Any],
         param_parser: ParamParserAbc,
-        implicit: Implicit = "input",
+        implicit: Implicit,
+        is_delegate: bool = False,
     ) -> "OperatorFn":
         signature = get_typed_signature(func)
         parameter_list: list[Parameter] = []
@@ -88,6 +90,7 @@ class OperatorFn:
             output=ReturnValue.validate(return_annotation, output_info),
             callback=func,
             param_parser=param_parser,
+            is_delegate=is_delegate,
         )
 
 
@@ -114,7 +117,8 @@ class OperatorFns(dict[str, OperatorFn]):
         *,
         name: str = "",
         param_parser: ParamParserAbc,
-        implicit: t.Literal["input", "param"] = "input",
+        implicit: t.Literal["input", "param"],
+        is_delegate: bool = False,
     ) -> t.Callable[..., t.Any]:
         def _decorator(func: t.Callable[..., t.Any]):
             key = name if name else func.__name__
@@ -122,6 +126,7 @@ class OperatorFns(dict[str, OperatorFn]):
                 func,
                 param_parser=param_parser,
                 implicit=implicit,
+                is_delegate=is_delegate,
             )
             return func
 

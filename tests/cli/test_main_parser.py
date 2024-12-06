@@ -14,6 +14,7 @@ from clios.core.param_info import Input, Output, Param
 intOut = t.Annotated[int, Output(callback=print)]
 intParam = t.Annotated[int, Param()]
 intIn = t.Annotated[int, Input()]
+strIn = t.Annotated[str, Input()]
 IntParam = t.Annotated[int, Param(type_conversion_phase="execute")]
 IntIn = t.Annotated[int, Input(type_conversion_phase="execute")]
 
@@ -68,6 +69,10 @@ def op_1P(ip: IntParam):
     pass
 
 
+def op_vp(*ip: intParam):
+    pass
+
+
 def op_1p1o(ip: intParam) -> intOut:
     return 1
 
@@ -100,6 +105,14 @@ def selvar(name: t.Annotated[str, Param()]):
     pass
 
 
+def op_vi1o(*i: intIn) -> intOut:
+    return 1
+
+
+def opd_vi1o(*i: strIn) -> intOut:
+    return 1
+
+
 ops = {
     "op_": op_,
     "op_1o": op_1o,
@@ -107,11 +120,13 @@ ops = {
     "op_1I": op_1I,
     "op_2i": op_2i,
     "op_vi": op_vi,
+    "op_vi1o": op_vi1o,
     "op_1k": op_1k,
     "op_1p1k": op_1p1k,
     "op_1p": op_1p,
     "op_1K": op_1K,
     "op_1P": op_1P,
+    "op_vp": op_vp,
     "op_1p1o": op_1p1o,
     "op_1i1k": op_1i1k,
     "op_1i1p": op_1i1p,
@@ -122,10 +137,24 @@ ops = {
     "op_2o": op_2o,
     "selvar": selvar,
 }
+
+ops_delegate = {
+    "opd_vi1o": opd_vi1o,
+}
+
 operator_fns = OperatorFns()
 param_parser = StandardParamParser()
 for name, op in ops.items():
-    operator_fns[name] = OperatorFn.from_def(op, param_parser=param_parser)
+    operator_fns[name] = OperatorFn.from_def(
+        op, param_parser=param_parser, implicit="input"
+    )
+for name, op in ops_delegate.items():
+    operator_fns[name] = OperatorFn.from_def(
+        op,
+        param_parser=param_parser,
+        implicit="input",
+        is_delegate=True,
+    )
 
 
 invalids = [
@@ -165,6 +194,13 @@ invalids = [
         ParserError(
             "These operators cannot be chained together!",
             ctx={"token_index": 0, "unchainable_token_index": 4},
+        ),
+    ],
+    [
+        ["-op_vi", "[", "-op_1o", "-op_1o", "-op_1o", "-op_", "]"],
+        ParserError(
+            "These operators cannot be chained together!",
+            ctx={"token_index": 0, "unchainable_token_index": 5},
         ),
     ],
     [
@@ -336,3 +372,40 @@ def test_get_operator_passing(input):
 
     operator = parser.get_operator(operator_fns, input)
     assert isinstance(operator, RootOperator)
+
+
+valid = [
+    [["-op_"], "[ op_ ]"],
+    [["-op_1i", "-op_1p1o,1"], "[ op_1i [ op_1p1o ] ]"],
+    [
+        ["-op_1i1o", "-op_1p1o,1", "output"],
+        "output [ op_1i1o [ op_1p1o ] ]",
+    ],
+    [["-op_1i", "100"], "[ op_1i [ 100 ] ]"],
+    [["-op_vi", "1", "1", "1", "1"], "[ op_vi [ 1 1 1 1 ] ]"],
+    [["-op_vp,1,1,1,1,1"], "[ op_vp ]"],
+    [["-op_1i1p,1", "1"], "[ op_1i1p [ 1 ] ]"],
+    [list("-op_vi [ 1 2 3 4 5 ]".split()), "[ op_vi [ 1 2 3 4 5 ] ]"],
+    [
+        list(" -op_1i -opd_vi1o [ -abc1 -abc2 -abc3 ]".split()),
+        "[ op_1i [ opd_vi1o [ -abc1 -abc2 -abc3 ] ] ]",
+    ],
+    [list("-op_vi [ -op_vi1o [ 1 2 3 ] ]".split()), "[ op_vi [ op_vi1o [ 1 2 3 ] ] ]"],
+    [
+        list("-op_vi -op_vi1o [ 1 2 3 ] 4 5 6".split()),
+        "[ op_vi [ op_vi1o [ 1 2 3 ] 4 5 6 ] ]",
+    ],
+    [
+        list("-op_vi [ -op_vi1o [ 1 2 3 ] -op_vi1o [ 4 5 6 ] ]".split()),
+        "[ op_vi [ op_vi1o [ 1 2 3 ] op_vi1o [ 4 5 6 ] ] ]",
+    ],
+]
+
+
+@pytest.mark.parametrize("input,expected_draw", valid)
+def test_draw(input, expected_draw):
+    parser = CliParser()
+    op = parser.get_operator(operator_fns=operator_fns, input=input)
+    assert isinstance(op, RootOperator)
+    assert op.draw() == expected_draw
+    op.execute()

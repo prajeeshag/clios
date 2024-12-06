@@ -31,6 +31,12 @@ class OperatorAbc(ABC):
 
 @dataclass(frozen=True)
 class SimpleOperator(OperatorAbc):
+    """
+    An operator that take an input and returns the input as output
+
+    This is used to to represent an input parameter as an operator
+    """
+
     name: str
     index: int
     input_: Any
@@ -44,6 +50,8 @@ class SimpleOperator(OperatorAbc):
 
 @dataclass(frozen=True)
 class BaseOperator(OperatorAbc):
+    """A base class for operators"""
+
     name: str
     index: int
     operator_fn: OperatorFn
@@ -118,14 +126,17 @@ class BaseOperator(OperatorAbc):
 
 @dataclass(frozen=True)
 class LeafOperator(BaseOperator):
+    """An operator that has no inputs"""
+
     pass
 
 
 @dataclass(frozen=True)
-class Operator(BaseOperator):
-    name: str
-    index: int
-    inputs: tuple[OperatorAbc, ...] = ()
+class _Operator(BaseOperator):
+    inputs: tuple[Any, ...] = ()
+
+    def execute_input(self, input_: Any) -> Any:
+        raise NotImplementedError
 
     def _validate_execute_inputs(self) -> list[Any]:
         input_values: list[Any] = []
@@ -134,7 +145,7 @@ class Operator(BaseOperator):
             input_param = next(iter_inputs)
             try:
                 value = input_param.execute_phase_validator.validate_python(
-                    input_.execute()
+                    self.execute_input(input_)
                 )
             except ValidationError as e:
                 raise OperatorError(
@@ -168,10 +179,38 @@ class Operator(BaseOperator):
                 ctx={"index": self.index, "name": self.name},
             )
 
+
+@dataclass(frozen=True)
+class Operator(_Operator):
+    """An operator that has inputs and the inputs are also operators"""
+
+    inputs: tuple[OperatorAbc, ...] = ()
+
+    def execute_input(self, input_: OperatorAbc) -> Any:
+        return input_.execute()
+
     def draw(self) -> str:
         res = f"{self.name} [ "
         for input_ in self.inputs:
             res += f"{input_.draw()} "
+        res += "]"
+        return res
+
+
+@dataclass(frozen=True)
+class DelegateOperator(_Operator):
+    """An operator that delegates the string inputs as it is"""
+
+    inputs: tuple[str, ...] = ()
+
+    def execute_input(self, input_: str) -> str:
+        return input_
+
+    def draw(self) -> str:
+        res = f"{self.name} [ "
+        if self.inputs:
+            res += " ".join(self.inputs)
+            res += " "
         res += "]"
         return res
 

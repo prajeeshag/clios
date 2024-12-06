@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from clios.cli.main_parser import CliParser
 from clios.cli.param_parser import StandardParamParser
-from clios.core.operator import OperatorError, RootOperator
+from clios.core.operator import OperatorError
 from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_info import Input, Output, Param
 
@@ -49,23 +49,11 @@ def op_1oe() -> intOut:
     return "a"
 
 
-def op_vi(*i: intIn):
-    pass
-
-
-def op_vi1o(*i: intIn) -> intOut:
-    return 1
-
-
 def op_1k(*, ip: intParam):
     pass
 
 
 def op_1p(ip: intParam):
-    pass
-
-
-def op_vp(*ip: intParam):
     pass
 
 
@@ -118,7 +106,7 @@ def list_functions():
 operators = OperatorFns()
 for func in list_functions():
     operators[func.__name__] = OperatorFn.from_def(
-        func, param_parser=StandardParamParser()
+        func, param_parser=StandardParamParser(), implicit="input"
     )
 
 
@@ -147,35 +135,6 @@ def test_error(input, expected):
     assert e.value.message == expected
     assert isinstance(e.value.ctx["error"], ValidationError)
     assert str(e.value)
-
-
-valid = [
-    [["-op_"], "[ op_ ]"],
-    [["-op_1i", "-op_1p1o,1"], "[ op_1i [ op_1p1o ] ]"],
-    [
-        ["-op_1i1o", "-op_1p1o,1", "output"],
-        "output [ op_1i1o [ op_1p1o ] ]",
-    ],
-    [["-op_1i", "100"], "[ op_1i [ 100 ] ]"],
-    [["-op_vi", "1", "1", "1", "1"], "[ op_vi [ 1 1 1 1 ] ]"],
-    [["-op_vp,1,1,1,1,1"], "[ op_vp ]"],
-    [["-op_1i1p,1", "1"], "[ op_1i1p [ 1 ] ]"],
-    [list("-op_vi [ 1 2 3 4 5 ]".split()), "[ op_vi [ 1 2 3 4 5 ] ]"],
-    [list("-op_vi [ -op_vi1o [ 1 2 3 ] ]".split()), "[ op_vi [ op_vi1o [ 1 2 3 ] ] ]"],
-    [
-        list("-op_vi [ -op_vi1o [ 1 2 3 ] -op_vi1o [ 4 5 6 ] ]".split()),
-        "[ op_vi [ op_vi1o [ 1 2 3 ] op_vi1o [ 4 5 6 ] ] ]",
-    ],
-]
-
-
-@pytest.mark.parametrize("input,expected_draw", valid)
-def test_draw(input, expected_draw):
-    parser = CliParser()
-    op = parser.get_operator(operator_fns=operators, input=input)
-    assert isinstance(op, RootOperator)
-    assert op.draw() == expected_draw
-    op.execute()
 
 
 def test_output_validation_failed():

@@ -36,8 +36,14 @@ class OperatorFns(OperatorFns_):
         name: str = "",
         param_parser: ParamParserAbc = standard_param_parser,
         implicit: t.Literal["input", "param"] = "param",
+        is_delegate: bool = False,
     ) -> t.Callable[..., t.Any]:
-        return super().register(name=name, param_parser=param_parser, implicit=implicit)
+        return super().register(
+            name=name,
+            param_parser=param_parser,
+            implicit=implicit,
+            is_delegate=is_delegate,
+        )
 
 
 class Clios:

@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from clios.core.main_parser import ParserAbc, ParserError
 from clios.core.operator import (
     BaseOperator,
+    DelegateOperator,
     LeafOperator,
     Operator,
     OperatorAbc,
@@ -162,45 +163,105 @@ class CliParser(ParserAbc):
                 ctx={"token_index": token_index},
             )
         operator_token_index = token_index
+        num_tokens = len(input_tokens)
         if isinstance(input_tokens[-1], LeftBracketToken):
+            # pop the left bracket
             input_tokens.pop()
             token_index += 1
+            # get the child tokens until closing right bracket
             child_tokens = self._get_bracketed_tokens(input_tokens, token_index)
-            child_operators = self._parse_child_operators(
-                operator_fns,
-                operator_fn,
-                token_index,
-                child_tokens,
-            )
-            token_index += len(child_tokens) + 1
         else:
-            child_operators = self._parse_child_operators(
-                operator_fns,
-                operator_fn,
-                token_index,
-                input_tokens,
-            )
+            child_tokens = input_tokens
 
-        if len(child_operators) < operator_fn.parameters.num_minimum_inputs:
+        inputs = self._parse_inputs(
+            operator_fns,
+            operator_fn,
+            token_index,
+            operator_token_index,
+            child_tokens,
+        )
+
+        token_index += num_tokens - len(input_tokens)
+
+        if len(inputs) < operator_fn.parameters.num_minimum_inputs:
             raise ParserError(
                 f"Missing inputs for operator {operator_name}!",
                 ctx={"token_index": operator_token_index},
+            )
+
+        if operator_fn.is_delegate:
+            return DelegateOperator(
+                name=operator_name,
+                index=operator_token_index,
+                operator_fn=operator_fn,
+                inputs=tuple(inputs),
+                args=args,
+                kwds=kwds,
             )
 
         return Operator(
             name=operator_name,
             index=token_index,
             operator_fn=operator_fn,
-            inputs=tuple(child_operators),
+            inputs=tuple(inputs),
             args=args,
             kwds=kwds,
         )
 
-    def _parse_child_operators(
+    def _parse_inputs(
         self,
         operator_fns: OperatorFns,
         operator_fn: OperatorFn,
         token_index: int,
+        operator_token_index: int,
+        input_tokens: list[Token],
+    ):
+        if operator_fn.is_delegate:
+            return self._parse_delegate_inputs(
+                operator_fns,
+                operator_fn,
+                token_index,
+                operator_token_index,
+                input_tokens,
+            )
+        return self._parse_input_operators(
+            operator_fns, operator_fn, token_index, operator_token_index, input_tokens
+        )
+
+    def _parse_delegate_inputs(
+        self,
+        operator_fns: OperatorFns,
+        operator_fn: OperatorFn,
+        token_index: int,
+        operator_token_index: int,
+        input_tokens: list[Token],
+    ):
+        inputs: list[str] = []
+
+        child_index = token_index
+        for input_param in operator_fn.parameters.iter_inputs():
+            if len(input_tokens) == 0:
+                break
+            child_token = input_tokens.pop()
+            child_index += 1
+            try:
+                value = input_param.build_phase_validator.validate_python(
+                    child_token.value
+                )
+            except ValidationError as e:
+                raise ParserError(
+                    f"Data validation failed for input {child_token.value}!",
+                    ctx={"error": e, "token_index": child_index},
+                )
+            inputs.append(value)
+        return inputs
+
+    def _parse_input_operators(
+        self,
+        operator_fns: OperatorFns,
+        operator_fn: OperatorFn,
+        token_index: int,
+        operator_token_index: int,
         input_tokens: list[Token],
     ):
         child_operators: list[OperatorAbc] = []
@@ -223,7 +284,7 @@ class CliParser(ParserAbc):
                         "These operators cannot be chained together!",
                         ctx={
                             "unchainable_token_index": child_index,
-                            "token_index": token_index,
+                            "token_index": operator_token_index,
                         },
                     )
                 num_tokens_before = len(input_tokens)

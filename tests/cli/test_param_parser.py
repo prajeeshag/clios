@@ -183,7 +183,7 @@ build_error = [
 @pytest.mark.parametrize("input,expected", invalid_operators)
 def test_parse_arguments(input, expected):
     parser = StandardParamParser()
-    parameters = OperatorFn.from_def(input[1], parser).parameters
+    parameters = OperatorFn.from_def(input[1], parser, implicit="input").parameters
 
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
@@ -194,7 +194,7 @@ def test_parse_arguments(input, expected):
 @pytest.mark.parametrize("input,expected", build_error)
 def test_parse_arguments_build_error(input, expected):
     parser = StandardParamParser()
-    parameters = OperatorFn.from_def(input[1], parser).parameters
+    parameters = OperatorFn.from_def(input[1], parser, implicit="input").parameters
 
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
@@ -224,7 +224,7 @@ def test_valid(fn, input, expected):
 
 def test_valid_single():
     parser = StandardParamParser()
-    parameters = OperatorFn.from_def(op_1i1p1o, parser).parameters
+    parameters = OperatorFn.from_def(op_1i1p1o, parser, implicit="input").parameters
     param_values = parser.parse_arguments("1", parameters)
     assert param_values[0] == (1,)
 
@@ -247,7 +247,7 @@ def get_synopsis_input():
     res.append(
         [
             parser,
-            OperatorFn.from_def(fn1, parser).parameters,
+            OperatorFn.from_def(fn1, parser, implicit="input").parameters,
             ",p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]",
         ]
     )
@@ -257,7 +257,9 @@ def get_synopsis_input():
     ) -> int:
         pass
 
-    res.append([parser, OperatorFn.from_def(fn2, parser).parameters, "[,p2]"])
+    res.append(
+        [parser, OperatorFn.from_def(fn2, parser, implicit="input").parameters, "[,p2]"]
+    )
 
     return res
 
