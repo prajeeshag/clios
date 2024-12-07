@@ -12,8 +12,8 @@ from clios.core.param_parser import ParamParserError as ParserError
 intOut = t.Annotated[int, Output(callback=print)]
 intParam = t.Annotated[int, Param()]
 intIn = t.Annotated[int, Input()]
-IntParam = t.Annotated[int, Param(type_conversion_phase="execute")]
-IntIn = t.Annotated[int, Input(type_conversion_phase="execute")]
+IntParam = t.Annotated[int, Param(core_validation_phase="execute")]
+IntIn = t.Annotated[int, Input(core_validation_phase="execute")]
 
 
 def op_():

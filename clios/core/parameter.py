@@ -27,7 +27,7 @@ def _init_validator(
     phase: str,
 ) -> TypeAdapter[t.Any]:
     validators = [BeforeValidator(validator) for validator in phase_validators]
-    if info.type_conversion_phase != phase:
+    if info.core_validation_phase != phase:
         annotation = t.Any
 
     if validators:
@@ -147,7 +147,7 @@ class Parameter:
         execute_phase_validator = _init_validator(
             param_type,
             param.annotation,
-            param_type.type_converters,
+            param_type.execute_phase_validators,
             "execute",
         )
 
