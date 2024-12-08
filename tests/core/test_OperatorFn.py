@@ -2,7 +2,7 @@
 import typing as t
 
 import pytest
-from pydantic import BaseModel, Strict, TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Doc
 
 from clios.core.operator_fn import OperatorFn
@@ -371,7 +371,7 @@ def test_ReturnValue_validator():
 
 def test_ReturnValue_annotation():
     op = OperatorFn.from_def(fn, param_parser=mock_arg_parser, implicit="input")
-    assert op.output.annotation == t.Annotated[int, Output(), Strict()]
+    assert op.output.annotation == t.Annotated[int, Output()]
 
 
 def test_ReturnValue_info():

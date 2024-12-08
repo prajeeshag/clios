@@ -9,7 +9,7 @@ from clios.cli.param_parser import StandardParamParser
 from clios.cli.presenter import CliPresenter
 from clios.core.main_parser import ParserError
 from clios.core.operator_fn import OperatorFn, OperatorFns
-from clios.core.param_info import Param
+from clios.core.param_info import Output, Param
 
 
 @pytest.fixture
@@ -240,10 +240,12 @@ def test_dry_pass(get_presenter):
 
 
 def test_run_fail(get_presenter):
+    IntOut = t.Annotated[int, Output(strict=True)]
+
     def output(i: t.Any):
         pass
 
-    def op1() -> int:
+    def op1() -> IntOut:
         return "1"
 
     presenter = get_presenter([operator1, output, op1])
