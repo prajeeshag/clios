@@ -92,18 +92,18 @@ class Parameter:
 
     @classmethod
     def validate(cls, param: i.Parameter, implicit: str) -> "Parameter":
-        assert (
-            param.annotation is not i.Signature.empty
-        ), f"Missing type annotation for parameter `{param.name}`"
+        assert param.annotation is not i.Signature.empty, (
+            f"Missing type annotation for parameter `{param.name}`"
+        )
         type_ = (
             t.get_args(param.annotation)[0]
             if t.get_origin(param.annotation) is t.Annotated
             else param.annotation
         )
 
-        assert not _is_not_supported(
-            type_
-        ), f"Unsupported type annotation for parameter `{param.name}`"
+        assert not _is_not_supported(type_), (
+            f"Unsupported type annotation for parameter `{param.name}`"
+        )
 
         default = param.default
         if param.default is i.Signature.empty:
@@ -125,9 +125,9 @@ class Parameter:
                 ParameterKind.KEYWORD_ONLY,
             ), f"Input parameter `{param.name}` cannot be keyword argument"
 
-            assert (
-                default is Parameter.empty
-            ), f"Input parameter `{param.name}` cannot have a default value"
+            assert default is Parameter.empty, (
+                f"Input parameter `{param.name}` cannot have a default value"
+            )
 
         build_phase_validator = _init_validator(
             param_type,

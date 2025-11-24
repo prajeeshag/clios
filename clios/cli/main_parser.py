@@ -106,7 +106,7 @@ class CliParser(ParserAbc):
         param_synopsis = op.param_parser.get_synopsis(op.parameters)
         input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
         output_synopsis = " ".join(
-            [f"output{i+1}" for i in range(op.output.info.num_outputs)]
+            [f"output{i + 1}" for i in range(op.output.info.num_outputs)]
         )
         if op.output.info.num_outputs == 1:
             output_synopsis = "output"
