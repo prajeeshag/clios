@@ -54,9 +54,12 @@ class CliParser(ParserAbc):
     def is_inline_operator(self, token: Token) -> bool:
         if isinstance(token, OperatorToken):
             name = Path(self.get_name(token)).name
-            pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*\.py$"
-            return re.match(pattern, name) is not None
+            return self.is_inline_operator_name(name)
         return False
+
+    def is_inline_operator_name(self, name: str) -> bool:
+        pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*\.py$"
+        return re.match(pattern, name) is not None
 
     def get_operator(
         self,
@@ -323,53 +326,7 @@ class CliParser(ParserAbc):
 
         return child_operators
 
-    def get_synopsis(
-        self,
-        operator_fn: OperatorFn,
-        operator_name: str,
-        command_name="",
-        **kwds: t.Any,
-    ) -> str:
-        op = operator_fn
-        param_synopsis = op.param_parser.get_synopsis(op.parameters, lsep=",")
-        input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
-        output_synopsis = " ".join(
-            [f"output{i+1}" for i in range(op.output.info.num_outputs)]
-        )
-        if op.output.info.num_outputs == 1:
-            output_synopsis = "output"
-
-        synopsis = command_name
-        synopsis += f" -{operator_name}"
-        if param_synopsis:
-            synopsis += param_synopsis
-        if input_synopsis:
-            synopsis += f" {input_synopsis}"
-        if output_synopsis:
-            synopsis += f" {output_synopsis}"
-        return synopsis
-
-    def _get_operator_fn(
-        self,
-        operator_fns: OperatorFns,
-        token: Token,
-        index: int,
-    ) -> OperatorFn:
-        name = self.get_name(token)
-
-        if self.is_inline_operator(token):
-            return self._get_inline_operator_fn(name, index)
-
-        op = operator_fns.get(name)
-        if op is None:
-            raise ParserError(
-                f"Operator `{name}` not found!", ctx={"token_index": index}
-            )
-        return op
-
-    def _get_inline_operator_fn(self, name: str, index: int) -> OperatorFn:
-        from pathlib import Path
-
+    def get_inline_operator_fn(self, name: str, index: int) -> OperatorFn:
         module_path = Path(name)
         module_name = module_path.stem
         try:
@@ -396,6 +353,50 @@ class CliParser(ParserAbc):
                 ctx={"token_index": index},
             )
         return operator_fn
+
+    def get_synopsis(
+        self,
+        operator_fn: OperatorFn,
+        operator_name: str,
+        command_name="",
+        **kwds: t.Any,
+    ) -> str:
+        op = operator_fn
+        param_synopsis = op.param_parser.get_synopsis(op.parameters, lsep=",")
+        input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
+        output_synopsis = " ".join(
+            [f"output{i + 1}" for i in range(op.output.info.num_outputs)]
+        )
+        if op.output.info.num_outputs == 1:
+            output_synopsis = "output"
+
+        synopsis = command_name
+        synopsis += f" -{operator_name}"
+        if param_synopsis:
+            synopsis += param_synopsis
+        if input_synopsis:
+            synopsis += f" {input_synopsis}"
+        if output_synopsis:
+            synopsis += f" {output_synopsis}"
+        return synopsis
+
+    def _get_operator_fn(
+        self,
+        operator_fns: OperatorFns,
+        token: Token,
+        index: int,
+    ) -> OperatorFn:
+        name = self.get_name(token)
+
+        if self.is_inline_operator(token):
+            return self.get_inline_operator_fn(name, index)
+
+        op = operator_fns.get(name)
+        if op is None:
+            raise ParserError(
+                f"Operator `{name}` not found!", ctx={"token_index": index}
+            )
+        return op
 
     def _get_bracketed_tokens(
         self, tokens: list[Token], opening_index: int

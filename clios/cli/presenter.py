@@ -125,11 +125,18 @@ class CliPresenter:
         Prints a detailed operator page using Rich.
         """
         console = Console()
-        try:
-            op_fn = self.operator_fns[name]
-        except KeyError:
-            console.print(f"Operator `{name}` not found!", style="bold red")
-            raise SystemExit(1)
+        if self.parser.is_inline_operator_name(name):
+            try:
+                op_fn = self.parser.get_inline_operator_fn(name, 0)
+            except ParserError as e:
+                console.print(e.message, style="bold red")
+                raise SystemExit(1)
+        else:
+            try:
+                op_fn = self.operator_fns[name]
+            except KeyError:
+                console.print(f"Operator `{name}` not found!", style="bold red")
+                raise SystemExit(1)
 
         synopsis = self.parser.get_synopsis(op_fn, name)
 

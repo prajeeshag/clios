@@ -51,6 +51,25 @@ class ParserAbc(ABC):
         """
 
     @abstractmethod
+    def is_inline_operator_name(self, name: str) -> bool:
+        """
+        Check if the string name is an inline operator
+        """
+
+    @abstractmethod
+    def get_inline_operator_fn(self, name: str, index: int) -> OperatorFn:
+        """
+        Get an inline operator function
+
+        Args:
+            name (str): The operator name
+            index (int): The index of the operator
+
+        Returns:
+            OperatorFn: The operator function
+        """
+
+    @abstractmethod
     def get_synopsis(
         self,
         operator_fn: OperatorFn,
