@@ -6,7 +6,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/clios)
 [![codecov](https://codecov.io/gh/prajeeshag/clios/graph/badge.svg?token=UNNUW30IQL)](https://codecov.io/gh/prajeeshag/clios)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/clios)
 ---
 
 **Documentation**: [https://prajeesh-ag.com/clios](https://prajeesh-ag.com/clios)
