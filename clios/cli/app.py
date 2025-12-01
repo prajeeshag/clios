@@ -17,7 +17,7 @@ standard_param_parser = StandardParamParser()
 def operator(
     *,
     param_parser: ParamParserAbc = standard_param_parser,
-    implicit: t.Literal["input", "param"] = "input",
+    implicit: t.Literal["input", "param"] = "param",
 ) -> t.Callable[..., t.Any]:
     def decorator(func: t.Callable[..., t.Any]) -> OperatorFn:
         operator_fn = OperatorFn.from_def(
