@@ -4,7 +4,7 @@ import typing as t
 import pytest
 from pydantic import ValidationError
 
-from clios.cli.param_parser import CliParamParser
+from clios.cli.param_parser import StandardParamParser
 from clios.core.operator_fn import OperatorFn
 from clios.core.param_info import Input, Output, Param
 from clios.core.param_parser import ParamParserError as ParserError
@@ -55,6 +55,10 @@ def op_1p1k(ip: intParam, *, ik: intParam):
 
 
 def op_1p(ip: intParam):
+    pass
+
+
+def selvar(name: t.Annotated[str, Param()]):
     pass
 
 
@@ -178,8 +182,8 @@ build_error = [
 
 @pytest.mark.parametrize("input,expected", invalid_operators)
 def test_parse_arguments(input, expected):
-    parser = CliParamParser()
-    parameters = OperatorFn.validate(input[1], parser).parameters
+    parser = StandardParamParser()
+    parameters = OperatorFn.from_def(input[1], parser, implicit="input").parameters
 
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
@@ -189,8 +193,8 @@ def test_parse_arguments(input, expected):
 
 @pytest.mark.parametrize("input,expected", build_error)
 def test_parse_arguments_build_error(input, expected):
-    parser = CliParamParser()
-    parameters = OperatorFn.validate(input[1], parser).parameters
+    parser = StandardParamParser()
+    parameters = OperatorFn.from_def(input[1], parser, implicit="input").parameters
 
     with pytest.raises(ParserError) as e:
         parser.parse_arguments(input[0], parameters)
@@ -202,25 +206,34 @@ def test_parse_arguments_build_error(input, expected):
     assert str(e.value)
 
 
-def test_valid():
-    parser = CliParamParser()
-    parameters = OperatorFn.validate(op_1p1k, parser, implicit="param").parameters
-    param_values = parser.parse_arguments("1,ik=1", parameters)
-    assert param_values[0] == (1,)
-    assert param_values[1] == (("ik", 1),)
+@pytest.mark.parametrize(
+    "fn,input,expected",
+    [
+        [op_1p, "100", [(100,), ()]],
+        [selvar, "name", [("name",), ()]],
+        [op_1p1k, "1,ik=1", [(1,), (("ik", 1),)]],
+    ],
+)
+def test_valid(fn, input, expected):
+    parser = StandardParamParser()
+    parameters = OperatorFn.from_def(fn, parser, implicit="param").parameters
+    param_values = parser.parse_arguments(input, parameters)
+    assert param_values[0] == expected[0]
+    assert param_values[1] == expected[1]
 
 
 def test_valid_single():
-    parser = CliParamParser()
-    parameters = OperatorFn.validate(op_1i1p1o, parser).parameters
+    parser = StandardParamParser()
+    parameters = OperatorFn.from_def(op_1i1p1o, parser, implicit="input").parameters
     param_values = parser.parse_arguments("1", parameters)
     assert param_values[0] == (1,)
 
 
-def test_get_synopsis():
-    parser = CliParamParser()
+def get_synopsis_input():
+    parser = StandardParamParser()
+    res = []
 
-    def fn(
+    def fn1(
         input: int,
         p1: intParam,
         p2: intParam = 10,
@@ -231,6 +244,26 @@ def test_get_synopsis():
     ) -> int:
         pass
 
-    expected = "p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]"
-    parameters = OperatorFn.validate(fn, parser).parameters
-    assert parser.get_synopsis(parameters) == expected
+    res.append(
+        [
+            parser,
+            OperatorFn.from_def(fn1, parser, implicit="input").parameters,
+            ",p1[,p2,*args],k1=<val>[,k2=<val>,**kwds]",
+        ]
+    )
+
+    def fn2(
+        p2: intParam = 10,
+    ) -> int:
+        pass
+
+    res.append(
+        [parser, OperatorFn.from_def(fn2, parser, implicit="input").parameters, "[,p2]"]
+    )
+
+    return res
+
+
+@pytest.mark.parametrize("parser, parameters, expected", get_synopsis_input())
+def test_get_synopsis(parser, parameters, expected):
+    assert parser.get_synopsis(parameters, lsep=",") == expected

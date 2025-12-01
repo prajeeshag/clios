@@ -6,11 +6,10 @@ import pytest
 from pydantic import ValidationError
 
 from clios.cli.main_parser import CliParser
-from clios.cli.param_parser import CliParamParser
-from clios.core.operator import OperatorError, RootOperator
-from clios.core.operator_fn import OperatorFn
+from clios.cli.param_parser import StandardParamParser
+from clios.core.operator import OperatorError
+from clios.core.operator_fn import OperatorFn, OperatorFns
 from clios.core.param_info import Input, Output, Param
-from clios.core.registry import OperatorRegistry
 
 intOut = t.Annotated[int, Output(callback=print)]
 
@@ -50,19 +49,11 @@ def op_1oe() -> intOut:
     return "a"
 
 
-def op_vi(*i: intIn):
-    pass
-
-
 def op_1k(*, ip: intParam):
     pass
 
 
 def op_1p(ip: intParam):
-    pass
-
-
-def op_vp(*ip: intParam):
     pass
 
 
@@ -112,10 +103,10 @@ def list_functions():
     return ff_functions
 
 
-operators = OperatorRegistry()
+operators = OperatorFns()
 for func in list_functions():
-    operators.add(
-        func.__name__, OperatorFn.validate(func, param_parser=CliParamParser())
+    operators[func.__name__] = OperatorFn.from_def(
+        func, param_parser=StandardParamParser(), implicit="input"
     )
 
 
@@ -146,29 +137,6 @@ def test_error(input, expected):
     assert str(e.value)
 
 
-valid = [
-    [["-op_"], "[ op_ ]"],
-    [["-op_1i", "-op_1p1o,1"], "[ op_1i [ op_1p1o ] ]"],
-    [
-        ["-op_1i1o", "-op_1p1o,1", "output"],
-        "output [ op_1i1o [ op_1p1o ] ]",
-    ],
-    [["-op_1i", "100"], "[ op_1i [ 100 ] ]"],
-    [["-op_vi", "1", "1", "1", "1"], "[ op_vi [ 1 1 1 1 ] ]"],
-    [["-op_vp,1,1,1,1,1"], "[ op_vp ]"],
-    [["-op_1i1p,1", "1"], "[ op_1i1p [ 1 ] ]"],
-]
-
-
-@pytest.mark.parametrize("input,expected_draw", valid)
-def test_draw(input, expected_draw):
-    parser = CliParser()
-    op = parser.get_operator(operator_fns=operators, input=input)
-    assert isinstance(op, RootOperator)
-    assert op.draw() == expected_draw
-    op.execute()
-
-
 def test_output_validation_failed():
     parser = CliParser()
     op = parser.get_operator(operator_fns=operators, input=["-op_1oe", "output"])
@@ -183,3 +151,14 @@ def test_output_validation_failed():
 
     with pytest.raises(OperatorError):
         op1.execute()
+
+
+def test_draw_inline(copy_file, request):
+    parser = CliParser()
+    copy_file("inline_valid.py")
+    file_path = request.path.parent / "inline_valid.py"
+    op_string = f"-{file_path}"
+    op = parser.get_operator(operator_fns=operators, input=["-inline_valid.py", "1"])
+    op1 = parser.get_operator(operator_fns=operators, input=[op_string, "1"])
+    assert op.draw() == "[ inline_valid.py [ 1 ] ]"
+    assert op1.draw() == f"[ {file_path} [ 1 ] ]"

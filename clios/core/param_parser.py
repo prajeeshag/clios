@@ -62,12 +62,13 @@ class ParamParserAbc(ABC):
         """
 
     @abstractmethod
-    def get_synopsis(self, parameters: Parameters) -> str:
+    def get_synopsis(self, parameters: Parameters, **kwds: t.Any) -> str:
         """
         Get the synopsis of the operator arguments
 
         Args:
             parameters: The list of parameters to get the synopsis for
+            kwds: Any extra keyword arguments
 
         Returns:
             str: The synopsis of the operator arguments

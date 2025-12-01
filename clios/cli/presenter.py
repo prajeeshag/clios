@@ -10,7 +10,7 @@ from rich.text import Text
 
 from clios.core.main_parser import ParserAbc, ParserError
 from clios.core.operator import OperatorError
-from clios.core.registry import OperatorRegistry
+from clios.core.operator_fn import OperatorFns
 
 
 class _KnownTypes(enum.Enum):
@@ -30,7 +30,7 @@ class _KnownTypes(enum.Enum):
 
 @dataclass(frozen=True)
 class CliPresenter:
-    operator_fns: OperatorRegistry
+    operator_fns: OperatorFns
     parser: ParserAbc
 
     def process_error(self, error: ParserError, args: list[str]) -> None:
@@ -104,6 +104,9 @@ class CliPresenter:
         )
         data = [(name, op.short_description) for name, op in self.operator_fns.items()]
         # Add columns with dynamic width for the second column
+        if not data:
+            console.print("No operators found!", style="bold red")
+            return
         column1_width = max(len(row[0]) for row in data)
         column1_width = max(len("Operator"), column1_width)
         table.add_column(
@@ -122,11 +125,18 @@ class CliPresenter:
         Prints a detailed operator page using Rich.
         """
         console = Console()
-        try:
-            op_fn = self.operator_fns.get(name)
-        except KeyError:
-            print(f"Operator `{name}` not found!")
-            raise SystemExit(1)
+        if self.parser.is_inline_operator_name(name):
+            try:
+                op_fn = self.parser.get_inline_operator_fn(name, 0)
+            except ParserError as e:
+                console.print(e.message, style="bold red")
+                raise SystemExit(1)
+        else:
+            try:
+                op_fn = self.operator_fns[name]
+            except KeyError:
+                console.print(f"Operator `{name}` not found!", style="bold red")
+                raise SystemExit(1)
 
         synopsis = self.parser.get_synopsis(op_fn, name)
 
@@ -151,6 +161,9 @@ class CliPresenter:
             if param.default is param.empty:
                 doc["default_value"] = ""
             doc["description"] = param.description
+            doc["choices"] = ""
+            if param.choices:
+                doc["choices"] = ", ".join(param.choices)
             docs.append(doc)
 
         # Synopsis
@@ -218,7 +231,7 @@ class CliPresenter:
             raise SystemExit(1)
         console.print(operator.draw())
 
-    def run(self, args: list[str]):
+    def run(self, args: list[str], debug: bool = False):
         """
         Run the operator function with the given arguments.
         """
@@ -226,12 +239,16 @@ class CliPresenter:
             operator = self.parser.get_operator(self.operator_fns, args)
         except ParserError as e:
             self.process_error(e, args)
+            if debug:
+                raise e
             raise SystemExit(1)
 
         try:
             operator.execute()
         except OperatorError as e:
             Console().print(Text(str(e), style="bold red"))
+            if debug:
+                raise e
             raise SystemExit(1)
 
 
@@ -244,6 +261,9 @@ def _create_param_table(args_doc: list[dict[str, str]], title: str) -> Table:
     for doc in args_doc:
         description = doc["description"]
         default_value = doc["default_value"]
+        choices = doc["choices"]
+        if choices != "":
+            description += f" Choices: {choices}"
         if default_value != "":
             description += f" (default: {default_value})"
         param_table.add_row(
