@@ -128,25 +128,6 @@ class CliParser(ParserAbc):
             args=tuple(output_file_paths),
         )
 
-    def get_synopsis(self, operator_fn: OperatorFn, operator_name: str) -> str:
-        op = operator_fn
-        param_synopsis = op.param_parser.get_synopsis(op.parameters)
-        input_synopsis = " ".join([i.name for i in op.parameters if i.is_input])
-        output_synopsis = " ".join(
-            [f"output{i + 1}" for i in range(op.output.info.num_outputs)]
-        )
-        if op.output.info.num_outputs == 1:
-            output_synopsis = "output"
-
-        synopsis = operator_name
-        if param_synopsis:
-            synopsis = f"{synopsis},{param_synopsis}"
-        if input_synopsis:
-            synopsis = f"{synopsis} {input_synopsis}"
-        if output_synopsis:
-            synopsis = f"{synopsis} {output_synopsis}"
-        return synopsis
-
     def _get_operator(
         self,
         operator_fns: OperatorFns,
