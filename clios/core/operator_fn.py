@@ -96,9 +96,9 @@ class OperatorFn:
 
 class OperatorFns(dict[str, OperatorFn]):
     def __setitem__(self, key: str, value: OperatorFn) -> None:
-        assert (
-            key not in self
-        ), f"Operator '{key}' already exists. Reassignment is not allowed."
+        assert key not in self, (
+            f"Operator '{key}' already exists. Reassignment is not allowed."
+        )
         super().__setitem__(key, value)
 
     def update(self, *arg, **kwds) -> None:
@@ -107,9 +107,9 @@ class OperatorFns(dict[str, OperatorFn]):
                 f"update() only accept a single positional argument of type {OperatorFns}"
             )
         for key in arg[0].keys():
-            assert (
-                key not in self
-            ), f"Operator '{key}' already exists. Reassignment is not allowed."
+            assert key not in self, (
+                f"Operator '{key}' already exists. Reassignment is not allowed."
+            )
         super().update(arg[0])
 
     def register(

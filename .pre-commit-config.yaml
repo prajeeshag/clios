@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-toml
@@ -25,8 +25,8 @@ repos:
         files: "\\.rej$"
         entry: found Copier undate rejection files; review and remove them
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.7.3
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
     hooks:
       - id: ruff
         args:
@@ -34,12 +34,12 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/ljnsn/cz-conventional-gitmoji
-    rev: v0.6.1
+    rev: v0.7.0
     hooks:
       - id: conventional-gitmoji
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.30.0
+    rev: v4.10.0
     hooks:
       - id: commitizen
         additional_dependencies: [cz-conventional-gitmoji]
