@@ -5,12 +5,11 @@ import pytest
 from typing_extensions import Doc
 
 from clios.cli.main_parser import CliParser
-from clios.cli.param_parser import CliParamParser
+from clios.cli.param_parser import StandardParamParser
 from clios.cli.presenter import CliPresenter
 from clios.core.main_parser import ParserError
-from clios.core.operator_fn import OperatorFn
-from clios.core.param_info import Param
-from clios.core.registry import OperatorRegistry
+from clios.core.operator_fn import OperatorFn, OperatorFns
+from clios.core.param_info import Output, Param
 
 
 @pytest.fixture
@@ -55,13 +54,13 @@ def operator1(
 
 @pytest.fixture
 def get_presenter(mocker):
-    param_parser = CliParamParser()
+    param_parser = StandardParamParser()
 
     def _presenter(fns):
-        operator_fns = OperatorRegistry()
+        operator_fns = OperatorFns()
         for fn in fns:
-            operator_fns.add(
-                fn.__name__, OperatorFn.validate(fn, param_parser=param_parser)
+            operator_fns[fn.__name__] = OperatorFn.from_def(
+                fn, param_parser=param_parser, implicit="input"
             )
         return CliPresenter(operator_fns=operator_fns, parser=CliParser())
 
@@ -122,7 +121,7 @@ def test_print_detail(
     mock_panel.assert_has_calls(
         [
             mocker.call(
-                "operator1,param1[,param2=<val>] input1 input2 output",
+                " -operator1,param1[,param2=<val>] input1 input2 output",
                 title="Synopsis",
                 style="bold yellow",
                 title_align="left",
@@ -241,10 +240,12 @@ def test_dry_pass(get_presenter):
 
 
 def test_run_fail(get_presenter):
+    IntOut = t.Annotated[int, Output(strict=True)]
+
     def output(i: t.Any):
         pass
 
-    def op1() -> int:
+    def op1() -> IntOut:
         return "1"
 
     presenter = get_presenter([operator1, output, op1])

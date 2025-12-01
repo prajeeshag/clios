@@ -16,14 +16,25 @@ dependencies = [
     "pydantic==2.9.*",
     "rich>=13.9.4",
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 
 [project.urls]
 homepage = "https://prajeeshag.github.io/clios"
 repository = "https://github.com/prajeeshag/clios"
 documentation = "https://prajeeshag.github.io/clios"
 
+[project.scripts]
+clios = "clios:main"
+
 [tool.pdm.build]
 excludes = ["tests", "examples"]
+
 
 [tool.pdm.version]
 source = "scm"

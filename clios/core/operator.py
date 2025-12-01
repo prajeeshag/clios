@@ -16,7 +16,7 @@ class OperatorError(Exception):
     def __str__(self) -> str:
         message = self.message
         if "error" in self.ctx:
-            message += f"\n{str(self.ctx['error'])}"
+            message += f"\n{self.ctx['error']}"
         return message
 
 
@@ -31,6 +31,12 @@ class OperatorAbc(ABC):
 
 @dataclass(frozen=True)
 class SimpleOperator(OperatorAbc):
+    """
+    An operator that take an input and returns the input as output
+
+    This is used to to represent an input parameter as an operator
+    """
+
     name: str
     index: int
     input_: Any
@@ -44,6 +50,8 @@ class SimpleOperator(OperatorAbc):
 
 @dataclass(frozen=True)
 class BaseOperator(OperatorAbc):
+    """A base class for operators"""
+
     name: str
     index: int
     operator_fn: OperatorFn
@@ -60,7 +68,7 @@ class BaseOperator(OperatorAbc):
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
         return arg_values
 
@@ -73,7 +81,7 @@ class BaseOperator(OperatorAbc):
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the argument `{param.name}` of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
         return arg_values
 
@@ -94,7 +102,14 @@ class BaseOperator(OperatorAbc):
     def execute(self) -> Any:
         arg_values = self._validate_arguments()
         kwds_values = self._validate_keywords()
-        value = self.operator_fn.callback(*arg_values, **kwds_values)
+        try:
+            value = self.operator_fn.callback(*arg_values, **kwds_values)
+        except Exception as e:
+            raise OperatorError(
+                f"An error occurred while executing operator `{self.name}`!",
+                ctx={"error": e, "index": self.index, "name": self.name},
+            )
+
         try:
             return self.operator_fn.output.validator.validate_python(value)
         except ValidationError as e:
@@ -102,6 +117,7 @@ class BaseOperator(OperatorAbc):
                 f"Data validation failed for the output of operator `{self.name}`!\n"
                 + f"Error: {e}\n"
                 + "It's a bug! Please report it!",
+                ctx={"index": self.index, "name": self.name},
             )
 
     def draw(self) -> str:
@@ -110,14 +126,17 @@ class BaseOperator(OperatorAbc):
 
 @dataclass(frozen=True)
 class LeafOperator(BaseOperator):
+    """An operator that has no inputs"""
+
     pass
 
 
 @dataclass(frozen=True)
-class Operator(BaseOperator):
-    name: str
-    index: int
-    inputs: tuple[OperatorAbc, ...] = ()
+class _Operator(BaseOperator):
+    inputs: tuple[Any, ...] = ()
+
+    def execute_input(self, input_: Any) -> Any:
+        raise NotImplementedError
 
     def _validate_execute_inputs(self) -> list[Any]:
         input_values: list[Any] = []
@@ -126,12 +145,12 @@ class Operator(BaseOperator):
             input_param = next(iter_inputs)
             try:
                 value = input_param.execute_phase_validator.validate_python(
-                    input_.execute()
+                    self.execute_input(input_)
                 )
             except ValidationError as e:
                 raise OperatorError(
                     f"Data validation failed for the input of operator `{self.name}`!",
-                    ctx={"error": e},
+                    ctx={"error": e, "index": self.index, "name": self.name},
                 )
             input_values.append(value)
         return input_values
@@ -141,7 +160,15 @@ class Operator(BaseOperator):
         kwds_values = self._validate_keywords()
         input_values = self._validate_execute_inputs()
         positional_args = self._compose_arg_values(arg_values, input_values)
-        value = self.operator_fn.callback(*positional_args, **kwds_values)
+
+        try:
+            value = self.operator_fn.callback(*positional_args, **kwds_values)
+        except Exception as e:
+            raise OperatorError(
+                f"An error occurred while executing operator `{self.name}`!",
+                ctx={"error": e, "index": self.index, "name": self.name},
+            )
+
         try:
             return self.operator_fn.output.validator.validate_python(value)
         except ValidationError as e:
@@ -149,12 +176,41 @@ class Operator(BaseOperator):
                 f"Data validation failed for the output of operator `{self.name}`!\n"
                 + f"Error: {e}\n"
                 + "It's a bug! Please report it!",
+                ctx={"index": self.index, "name": self.name},
             )
+
+
+@dataclass(frozen=True)
+class Operator(_Operator):
+    """An operator that has inputs and the inputs are also operators"""
+
+    inputs: tuple[OperatorAbc, ...] = ()
+
+    def execute_input(self, input_: OperatorAbc) -> Any:
+        return input_.execute()
 
     def draw(self) -> str:
         res = f"{self.name} [ "
         for input_ in self.inputs:
             res += f"{input_.draw()} "
+        res += "]"
+        return res
+
+
+@dataclass(frozen=True)
+class DelegateOperator(_Operator):
+    """An operator that delegates the string inputs as it is"""
+
+    inputs: tuple[str, ...] = ()
+
+    def execute_input(self, input_: str) -> str:
+        return input_
+
+    def draw(self) -> str:
+        res = f"{self.name} [ "
+        if self.inputs:
+            res += " ".join(self.inputs)
+            res += " "
         res += "]"
         return res
 

@@ -1,8 +1,9 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
-from clios.core.tokenizer import Token, TokenError, Tokenizer
+from clios.core.tokenizer import Token, Tokenizer
 
 
 @dataclass(frozen=True)
@@ -20,8 +21,13 @@ class OperatorToken(Token):
 
     @classmethod
     def match(cls, string: str) -> bool:
-        pattern = r"^-[a-zA-Z]"
-        return re.match(pattern, string) is not None
+        if string[0] != "-":
+            return False
+        name = Path(string[1:]).name
+        pattern = r"^[a-zA-Z_]"
+        if re.match(pattern, name) is not None:
+            return True
+        return False
 
 
 @dataclass(frozen=True)
@@ -60,8 +66,6 @@ class TokenType(Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> "TokenType":
-        if not isinstance(value, str):
-            raise TokenError("Invalid token type")
         for member in cls:
             if member.value.match(value) and member is not cls.STRING:
                 return member

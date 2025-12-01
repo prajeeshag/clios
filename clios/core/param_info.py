@@ -27,5 +27,6 @@ ParamTypes = Param | Input
 
 @dataclass(frozen=True)
 class Output:
+    strict: bool = False
     callback: Callable[..., None] | None = None
     num_outputs: NonNegativeInt = 1
