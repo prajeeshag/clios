@@ -47,10 +47,11 @@ class OperatorFns(OperatorFns_):
 
 
 class Clios:
-    def __init__(self, operator_fns: OperatorFns_) -> None:
+    def __init__(self, operator_fns: OperatorFns_, exe_name: str = "") -> None:
         self._operators = operator_fns
         self._parser = CliParser()
         self._presenter = CliPresenter(self._operators, self._parser)
+        self._exe_name = exe_name
 
     def __call__(self):
         try:
@@ -71,7 +72,7 @@ class Clios:
         if options["list"]:
             return self._presenter.print_list()
         if options["show"] is not None:
-            return self._presenter.print_detail(options["show"])
+            return self._presenter.print_detail(options["show"], self._exe_name)
         if options["dry_run"]:
             return self._presenter.dry_run(args)
         debug = options["debug"]

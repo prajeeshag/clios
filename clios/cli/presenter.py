@@ -120,7 +120,7 @@ class CliPresenter:
         console.print()
         console.print(table)
 
-    def print_detail(self, name: str):
+    def print_detail(self, name: str, exe_name: str = ""):
         """
         Prints a detailed operator page using Rich.
         """
@@ -139,6 +139,9 @@ class CliPresenter:
                 raise SystemExit(1)
 
         synopsis = self.parser.get_synopsis(op_fn, name)
+
+        if exe_name:
+            synopsis = f"{exe_name}{synopsis}"
 
         short_description = op_fn.short_description
         long_description = op_fn.long_description
