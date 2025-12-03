@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from pydantic import ValidationError
 
+from .exceptions import CliosError
 from .operator_fn import OperatorFn
 
 
@@ -104,7 +105,7 @@ class BaseOperator(OperatorAbc):
         kwds_values = self._validate_keywords()
         try:
             value = self.operator_fn.callback(*arg_values, **kwds_values)
-        except Exception as e:
+        except CliosError as e:  # TODO Catch specific exceptions
             raise OperatorError(
                 f"An error occurred while executing operator `{self.name}`!",
                 ctx={"error": e, "index": self.index, "name": self.name},

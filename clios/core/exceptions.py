@@ -1,0 +1,2 @@
+class CliosError(Exception):
+    pass

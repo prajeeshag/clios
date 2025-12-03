@@ -1,8 +1,11 @@
 import typing as t
 
+from rich import print
+
 from .cli.app import Clios as Clios
 from .cli.app import OperatorFns as OperatorFns
 from .cli.app import operator as operator
+from .core.exceptions import CliosError as CliosError
 from .core.operator import OperatorError as OperatorError
 from .core.param_info import Input as Input
 from .core.param_info import Output as Output
@@ -19,7 +22,7 @@ def _output(input: t.Annotated[t.Any, Input()]) -> None:
     description:
         It uses the `rich` library to print the data in a formatted way.
     """
-    print(input)
+    print(input)  # noqa: T201
 
 
 main = Clios(registry)
