@@ -113,10 +113,10 @@ invalid_operators = [
     ],
     [
         [
-            "ip=1,a=1",
+            "i&p=1",
             op_1i1k,
         ],
-        ParserError("Unknown keyword argument `a`!", ctx={"spos": 5, "epos": 8}),
+        ParserError("Invalid keyword argument name `i&p`!", ctx={"spos": 0, "epos": 5}),
     ],
     [
         [

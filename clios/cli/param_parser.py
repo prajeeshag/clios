@@ -49,6 +49,14 @@ class StandardParamParser(ParamParserAbc):
             kwd = self.get_keyword(arg)
             if kwd is not None:
                 k, v = kwd
+                if not is_valid_variable_name(k):
+                    raise ParamParserError(
+                        f"Invalid keyword argument name `{k}`!",
+                        ctx={
+                            "spos": spos,
+                            "epos": epos,
+                        },
+                    )
                 if k in kwd_values:
                     raise ParamParserError(
                         f"Duplicate keyword argument `{k}`!",
@@ -140,9 +148,6 @@ class StandardParamParser(ParamParserAbc):
         sep_index = string.find(self.kw_sep)
 
         if sep_index < 1:
-            return None
-
-        if not is_valid_variable_name(string[:sep_index]):
             return None
 
         return string[:sep_index], string[sep_index + 1 :]

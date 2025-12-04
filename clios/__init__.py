@@ -22,7 +22,7 @@ def _output(input: t.Annotated[t.Any, Input()]) -> None:
     description:
         It uses the `rich` library to print the data in a formatted way.
     """
-    print(input)  # noqa: T201
+    print(input)  # noqa: T201 # pragma: no cover
 
 
 main = Clios(registry)

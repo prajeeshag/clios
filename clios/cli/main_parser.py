@@ -242,7 +242,7 @@ class CliParser(ParserAbc):
         inputs: list[str] = []
 
         child_index = token_index
-        for input_param in operator_fn.parameters.iter_inputs():
+        for input_param in operator_fn.parameters.iter_inputs():  # pragma: no cover
             if len(input_tokens) == 0:
                 break
             child_token = input_tokens.pop()

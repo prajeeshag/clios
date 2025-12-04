@@ -22,7 +22,7 @@ class OperatorFn:
     is_delegate: bool = False
 
     @property
-    def short_description(self):
+    def short_description(self) -> str:
         """Get the short description of the operator"""
         if not self.callback.__doc__:
             return ""
@@ -34,7 +34,7 @@ class OperatorFn:
         return parsed_docstring[0].value
 
     @property
-    def long_description(self):
+    def long_description(self) -> str:
         """Get the long description of the operator"""
         if not self.callback.__doc__:
             return ""

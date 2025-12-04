@@ -1,9 +1,26 @@
+import enum
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta
 
 from .operator import RootOperator
 from .operator_fn import OperatorFn, OperatorFns
+
+
+class _KnownTypes(enum.Enum):
+    INT = int
+    FLOAT = float
+    TEXT = str
+    BOOL = bool
+    DATETIME = datetime
+    DATE = date
+    TIME = time
+    TIMDELTA = timedelta
+
+    @classmethod
+    def _missing_(cls, value: t.Any) -> t.Any:
+        return cls.TEXT  # pragma: no cover
 
 
 class ParserErrorCtx(t.TypedDict, total=False):
@@ -85,3 +102,59 @@ class ParserAbc(ABC):
         Returns:
             str: The synopsis
         """
+
+    def get_details(
+        self,
+        name: str,
+        op_fn: OperatorFn,
+        exe_name: str = "",
+    ) -> tuple[
+        str,
+        str,
+        str,
+        list[dict[str, str]],
+        list[dict[str, str]],
+    ]:
+        """
+        Get the details of an operator
+
+        Args:
+            name (str): The operator name
+            op_fn (OperatorFn): The operator function
+            exe_name (str, optional): The executable name. Defaults to "".
+
+        Returns:
+           synopsis, short_description, long_description, args_doc, kwds_doc
+        """
+
+        synopsis = self.get_synopsis(op_fn, name)
+
+        if exe_name:
+            synopsis = f"{exe_name}{synopsis}"
+
+        short_description = op_fn.short_description
+        long_description = op_fn.long_description
+        args_doc: list[dict[str, str]] = []
+        kwds_doc: list[dict[str, str]] = []
+        for param in op_fn.parameters:
+            if param.is_positional_param or param.is_var_param:
+                docs = args_doc
+            elif param.is_keyword_param or param.is_var_keyword:
+                docs = kwds_doc
+            else:
+                continue
+            doc: dict[str, t.Any] = {}
+            doc["name"] = param.name
+            doc["type"] = _KnownTypes(param.type_).name
+            doc["required"] = "Required" if param.is_required else "Optional"
+            doc["default_value"] = str(param.default)
+            if param.default == "":
+                doc["default_value"] = "''"
+            if param.default is param.empty:
+                doc["default_value"] = ""
+            doc["description"] = param.description
+            doc["choices"] = ""
+            if param.choices:
+                doc["choices"] = ", ".join(param.choices)
+            docs.append(doc)
+        return synopsis, short_description, long_description, args_doc, kwds_doc

@@ -1,7 +1,4 @@
-import enum
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -11,21 +8,6 @@ from rich.text import Text
 from clios.core.main_parser import ParserAbc, ParserError
 from clios.core.operator import OperatorError
 from clios.core.operator_fn import OperatorFns
-
-
-class _KnownTypes(enum.Enum):
-    INT = int
-    FLOAT = float
-    TEXT = str
-    BOOL = bool
-    DATETIME = datetime
-    DATE = date
-    TIME = time
-    TIMDELTA = timedelta
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Any:
-        return cls.TEXT
 
 
 @dataclass(frozen=True)
@@ -138,36 +120,9 @@ class CliPresenter:
                 console.print(f"Operator `{name}` not found!", style="bold red")
                 raise SystemExit(1)
 
-        synopsis = self.parser.get_synopsis(op_fn, name)
-
-        if exe_name:
-            synopsis = f"{exe_name}{synopsis}"
-
-        short_description = op_fn.short_description
-        long_description = op_fn.long_description
-        args_doc: list[dict[str, str]] = []
-        kwds_doc: list[dict[str, str]] = []
-        for param in op_fn.parameters:
-            if param.is_positional_param or param.is_var_param:
-                docs = args_doc
-            elif param.is_keyword_param or param.is_var_keyword:
-                docs = kwds_doc
-            else:
-                continue
-            doc: dict[str, Any] = {}
-            doc["name"] = param.name
-            doc["type"] = _KnownTypes(param.type_).name
-            doc["required"] = "Required" if param.is_required else "Optional"
-            doc["default_value"] = str(param.default)
-            if param.default == "":
-                doc["default_value"] = "''"
-            if param.default is param.empty:
-                doc["default_value"] = ""
-            doc["description"] = param.description
-            doc["choices"] = ""
-            if param.choices:
-                doc["choices"] = ", ".join(param.choices)
-            docs.append(doc)
+        synopsis, short_description, long_description, args_doc, kwds_doc = (
+            self.parser.get_details(name, op_fn, exe_name)
+        )
 
         # Synopsis
         synopsis_panel = Panel(
