@@ -8,7 +8,7 @@ operators = OperatorFns()
 @operators.register(name="print", implicit="input")
 def print_(input: Any) -> None:
     """Print the given input data to the terminal."""
-    print(input)
+    print(input)  # noqa: T201
 
 
 @operators.register(implicit="input")
