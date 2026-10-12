@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -128,8 +129,6 @@ class BaseOperator(OperatorAbc):
 @dataclass(frozen=True)
 class LeafOperator(BaseOperator):
     """An operator that has no inputs"""
-
-    pass
 
 
 @dataclass(frozen=True)
