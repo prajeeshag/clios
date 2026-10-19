@@ -26,12 +26,10 @@ def op_1o_noroot() -> int:
 
 def op_1i(i: intIn):
     "op_1i i"
-    pass
 
 
 def op_1I(i: IntIn):
     "op_1I i"
-    pass
 
 
 def op_2i(i: intIn, j: intIn):
