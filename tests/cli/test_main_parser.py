@@ -29,12 +29,10 @@ def op_1o_noroot() -> int:
 
 def op_1i(i: intIn):
     "op_1i i"
-    pass
 
 
 def op_1I(i: IntIn):
     "op_1I i"
-    pass
 
 
 def op_2i(i: intIn, j: intIn):
@@ -385,18 +383,39 @@ valid = [
     [["-op_vi", "1", "1", "1", "1"], "[ op_vi [ 1 1 1 1 ] ]"],
     [["-op_vp,1,1,1,1,1"], "[ op_vp ]"],
     [["-op_1i1p,1", "1"], "[ op_1i1p [ 1 ] ]"],
-    [list("-op_vi [ 1 2 3 4 5 ]".split()), "[ op_vi [ 1 2 3 4 5 ] ]"],
+    [list(["-op_vi", "[", "1", "2", "3", "4", "5", "]"]), "[ op_vi [ 1 2 3 4 5 ] ]"],
     [
-        list(" -op_1i -opd_vi1o [ -abc1 -abc2 -abc3 ]".split()),
+        list(["-op_1i", "-opd_vi1o", "[", "-abc1", "-abc2", "-abc3", "]"]),
         "[ op_1i [ opd_vi1o [ -abc1 -abc2 -abc3 ] ] ]",
     ],
-    [list("-op_vi [ -op_vi1o [ 1 2 3 ] ]".split()), "[ op_vi [ op_vi1o [ 1 2 3 ] ] ]"],
     [
-        list("-op_vi -op_vi1o [ 1 2 3 ] 4 5 6".split()),
+        list(["-op_vi", "[", "-op_vi1o", "[", "1", "2", "3", "]", "]"]),
+        "[ op_vi [ op_vi1o [ 1 2 3 ] ] ]",
+    ],
+    [
+        list(["-op_vi", "-op_vi1o", "[", "1", "2", "3", "]", "4", "5", "6"]),
         "[ op_vi [ op_vi1o [ 1 2 3 ] 4 5 6 ] ]",
     ],
     [
-        list("-op_vi [ -op_vi1o [ 1 2 3 ] -op_vi1o [ 4 5 6 ] ]".split()),
+        list(
+            [
+                "-op_vi",
+                "[",
+                "-op_vi1o",
+                "[",
+                "1",
+                "2",
+                "3",
+                "]",
+                "-op_vi1o",
+                "[",
+                "4",
+                "5",
+                "6",
+                "]",
+                "]",
+            ]
+        ),
         "[ op_vi [ op_vi1o [ 1 2 3 ] op_vi1o [ 4 5 6 ] ] ]",
     ],
 ]
