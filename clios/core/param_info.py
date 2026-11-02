@@ -1,4 +1,5 @@
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from pydantic import NonNegativeInt
 from pydantic.dataclasses import dataclass
