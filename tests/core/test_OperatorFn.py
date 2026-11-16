@@ -74,7 +74,6 @@ def fn(
         Example 2:
             $ cdo -fn,2 input output
     """
-    pass
 
 
 def fn12():
