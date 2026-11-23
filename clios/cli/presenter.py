@@ -31,7 +31,7 @@ class CliPresenter:
         sub_error = error.ctx.get("error", None)
 
         if sub_error is not None:
-            message += f"\n{str(sub_error)}"
+            message += f"\n{sub_error!s}"
 
         error_argument_text = Text()
         if token_index is not None:
